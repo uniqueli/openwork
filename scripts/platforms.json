@@ -28,7 +28,8 @@
       },
       "npm": {
         "key": "linux-arm64",
-        "binaryPath": "openwork"
+        "binaryPath": "openwork",
+        "note": "Cross-compiled on ubuntu-latest (ARM runners not available for private repos)"
       }
     },
     "linux-x64": {
