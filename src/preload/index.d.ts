@@ -22,7 +22,11 @@ interface CustomAPI {
       command: unknown,
       onEvent: (event: StreamEvent) => void
     ) => () => void
-    interrupt: (threadId: string, decision: HITLDecision) => Promise<void>
+    interrupt: (
+      threadId: string,
+      decision: HITLDecision,
+      onEvent?: (event: StreamEvent) => void
+    ) => () => void
     cancel: (threadId: string) => Promise<void>
   }
   threads: {

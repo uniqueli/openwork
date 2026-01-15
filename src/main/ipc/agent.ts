@@ -1,5 +1,6 @@
 import { IpcMain, BrowserWindow } from 'electron'
 import { HumanMessage } from '@langchain/core/messages'
+import { Command } from '@langchain/langgraph'
 import { createAgentRuntime } from '../agent/runtime'
 import { getThread } from '../db'
 import type { HITLDecision } from '../types'
@@ -107,26 +108,163 @@ export function registerAgentHandlers(ipcMain: IpcMain): void {
     }
   )
 
+  // Handle agent resume (after interrupt approval/rejection via useStream)
+  ipcMain.on(
+    'agent:resume',
+    async (
+      event,
+      {
+        threadId,
+        command
+      }: { threadId: string; command: { resume?: { decision?: string } } }
+    ) => {
+      const channel = `agent:stream:${threadId}`
+      const window = BrowserWindow.fromWebContents(event.sender)
+
+      console.log('[Agent] Received resume request:', { threadId, command })
+
+      if (!window) {
+        console.error('[Agent] No window found for resume')
+        return
+      }
+
+      // Get workspace path from thread metadata
+      const thread = getThread(threadId)
+      const metadata = thread?.metadata ? JSON.parse(thread.metadata) : {}
+      const workspacePath = metadata.workspacePath as string | undefined
+
+      if (!workspacePath) {
+        window.webContents.send(channel, {
+          type: 'error',
+          error: 'Workspace path is required'
+        })
+        return
+      }
+
+      // Abort any existing stream before resuming
+      const existingController = activeRuns.get(threadId)
+      if (existingController) {
+        existingController.abort()
+        activeRuns.delete(threadId)
+      }
+
+      const abortController = new AbortController()
+      activeRuns.set(threadId, abortController)
+
+      try {
+        const agent = await createAgentRuntime({ workspacePath })
+        const config = {
+          configurable: { thread_id: threadId },
+          signal: abortController.signal,
+          streamMode: ['messages', 'values'] as const,
+          recursionLimit: 1000
+        }
+
+        // Resume from checkpoint by streaming with Command containing the decision
+        // The HITL middleware expects { decisions: [{ type: 'approve' | 'reject' | 'edit' }] }
+        const decisionType = command?.resume?.decision || 'approve'
+        const resumeValue = { decisions: [{ type: decisionType }] }
+        const stream = await agent.stream(new Command({ resume: resumeValue }), config)
+
+        for await (const chunk of stream) {
+          if (abortController.signal.aborted) break
+
+          const [mode, data] = chunk as unknown as [string, unknown]
+          window.webContents.send(channel, {
+            type: 'stream',
+            mode,
+            data: JSON.parse(JSON.stringify(data))
+          })
+        }
+
+        window.webContents.send(channel, { type: 'done' })
+      } catch (error) {
+        console.error('[Agent] Resume error:', error)
+        window.webContents.send(channel, {
+          type: 'error',
+          error: error instanceof Error ? error.message : 'Unknown error'
+        })
+      } finally {
+        activeRuns.delete(threadId)
+      }
+    }
+  )
+
   // Handle HITL interrupt response
-  ipcMain.handle(
+  ipcMain.on(
     'agent:interrupt',
-    async (_event, { threadId, decision }: { threadId: string; decision: HITLDecision }) => {
+    async (event, { threadId, decision }: { threadId: string; decision: HITLDecision }) => {
+      const channel = `agent:stream:${threadId}`
+      const window = BrowserWindow.fromWebContents(event.sender)
+
+      if (!window) {
+        console.error('[Agent] No window found for interrupt response')
+        return
+      }
+
       // Get workspace path from thread metadata - REQUIRED
       const thread = getThread(threadId)
       const metadata = thread?.metadata ? JSON.parse(thread.metadata) : {}
       const workspacePath = metadata.workspacePath as string | undefined
 
       if (!workspacePath) {
-        throw new Error('Workspace path is required')
+        window.webContents.send(channel, {
+          type: 'error',
+          error: 'Workspace path is required'
+        })
+        return
       }
 
-      const agent = await createAgentRuntime({ workspacePath })
-      const config = { configurable: { thread_id: threadId } }
-
-      if (decision.type === 'approve') {
-        await agent.invoke(null, config)
+      // Abort any existing stream before continuing
+      const existingController = activeRuns.get(threadId)
+      if (existingController) {
+        existingController.abort()
+        activeRuns.delete(threadId)
       }
-      // reject and edit handled by Command in future
+
+      const abortController = new AbortController()
+      activeRuns.set(threadId, abortController)
+
+      try {
+        const agent = await createAgentRuntime({ workspacePath })
+        const config = {
+          configurable: { thread_id: threadId },
+          signal: abortController.signal,
+          streamMode: ['messages', 'values'] as const,
+          recursionLimit: 1000
+        }
+
+        if (decision.type === 'approve') {
+          // Resume execution by invoking with null (continues from checkpoint)
+          const stream = await agent.stream(null, config)
+
+          for await (const chunk of stream) {
+            if (abortController.signal.aborted) break
+
+            const [mode, data] = chunk as unknown as [string, unknown]
+            window.webContents.send(channel, {
+              type: 'stream',
+              mode,
+              data: JSON.parse(JSON.stringify(data))
+            })
+          }
+
+          window.webContents.send(channel, { type: 'done' })
+        } else if (decision.type === 'reject') {
+          // For reject, we need to send a Command with reject decision
+          // For now, just send done - the agent will see no resumption happened
+          window.webContents.send(channel, { type: 'done' })
+        }
+        // edit case handled similarly to approve with modified args
+      } catch (error) {
+        console.error('[Agent] Interrupt error:', error)
+        window.webContents.send(channel, {
+          type: 'error',
+          error: error instanceof Error ? error.message : 'Unknown error'
+        })
+      } finally {
+        activeRuns.delete(threadId)
+      }
     }
   )
 

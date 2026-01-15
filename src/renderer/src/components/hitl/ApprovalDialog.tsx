@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { AlertTriangle, Check, X, Edit2 } from 'lucide-react'
+import { Terminal, Check, X, Edit2, ChevronDown, ChevronUp } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useAppStore } from '@/lib/store'
@@ -12,9 +12,13 @@ interface ApprovalDialogProps {
 export function ApprovalDialog({ request }: ApprovalDialogProps) {
   const { respondToApproval } = useAppStore()
   const [isEditing, setIsEditing] = useState(false)
-  const [editedArgs, setEditedArgs] = useState(
-    JSON.stringify(request.tool_call.args, null, 2)
-  )
+  const [isExpanded, setIsExpanded] = useState(true)
+
+  // Defensive: ensure tool_call and args exist
+  const toolCall = request?.tool_call || { id: '', name: 'unknown', args: {} }
+  const args = toolCall.args || {}
+
+  const [editedArgs, setEditedArgs] = useState(JSON.stringify(args, null, 2))
 
   const handleApprove = async () => {
     if (isEditing) {
@@ -34,79 +38,121 @@ export function ApprovalDialog({ request }: ApprovalDialogProps) {
     await respondToApproval('reject')
   }
 
-  const getToolWarning = () => {
-    const name = request.tool_call.name
-    if (name === 'execute') return 'This will execute a shell command'
-    if (name === 'write_file') return 'This will create or overwrite a file'
-    if (name === 'edit_file') return 'This will modify an existing file'
+  // Get a preview of the command for execute tool
+  const getCommandPreview = () => {
+    if (toolCall.name === 'execute' && args.command) {
+      const cmd = String(args.command)
+      return cmd.length > 60 ? cmd.substring(0, 60) + '...' : cmd
+    }
     return null
   }
 
-  const warning = getToolWarning()
+  const commandPreview = getCommandPreview()
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-      <div className="w-full max-w-lg rounded-sm border border-border bg-card p-6 shadow-lg">
-        {/* Header */}
-        <div className="flex items-start justify-between mb-4">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <AlertTriangle className="size-5 text-status-warning" />
-              <h2 className="text-lg font-medium">Tool Approval Required</h2>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              The agent wants to execute the following action
-            </p>
-          </div>
-          <Badge variant="warning">{request.tool_call.name}</Badge>
+    <div className="rounded-md border border-amber-500/50 bg-amber-500/5 overflow-hidden">
+      {/* Header - always visible */}
+      <div
+        className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-amber-500/10 transition-colors"
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
+        <div className="flex items-center justify-center size-8 rounded-md bg-amber-500/20 text-amber-500">
+          <Terminal className="size-4" />
         </div>
-
-        {/* Warning */}
-        {warning && (
-          <div className="mb-4 rounded-sm border border-status-warning/30 bg-status-warning/10 p-3 text-sm text-status-warning">
-            {warning}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium">Approval Required</span>
+            <Badge variant="warning" className="text-[10px] px-1.5 py-0">
+              {toolCall.name}
+            </Badge>
           </div>
-        )}
-
-        {/* Arguments */}
-        <div className="mb-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-section-header">ARGUMENTS</span>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsEditing(!isEditing)}
-            >
-              <Edit2 className="size-3 mr-1" />
-              {isEditing ? 'Cancel Edit' : 'Edit'}
-            </Button>
-          </div>
-          
-          {isEditing ? (
-            <textarea
-              value={editedArgs}
-              onChange={(e) => setEditedArgs(e.target.value)}
-              className="w-full h-48 rounded-sm border border-border bg-background p-3 font-mono text-xs focus:outline-none focus:ring-1 focus:ring-ring"
-            />
-          ) : (
-            <pre className="rounded-sm border border-border bg-background p-3 font-mono text-xs overflow-x-auto max-h-48">
-              {JSON.stringify(request.tool_call.args, null, 2)}
-            </pre>
+          {commandPreview && !isExpanded && (
+            <div className="text-xs text-muted-foreground font-mono truncate mt-0.5">
+              {commandPreview}
+            </div>
           )}
         </div>
-
-        {/* Actions */}
-        <div className="flex items-center justify-end gap-2">
-          <Button variant="outline" onClick={handleReject}>
-            <X className="size-4 mr-1" />
-            Reject
-          </Button>
-          <Button variant="nominal" onClick={handleApprove}>
-            <Check className="size-4 mr-1" />
-            {isEditing ? 'Apply & Approve' : 'Approve'}
-          </Button>
+        <div className="flex items-center gap-2">
+          {!isExpanded && (
+            <>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleReject()
+                }}
+              >
+                <X className="size-3 mr-1" />
+                Reject
+              </Button>
+              <Button
+                size="sm"
+                variant="nominal"
+                className="h-7 px-2 text-xs"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleApprove()
+                }}
+              >
+                <Check className="size-3 mr-1" />
+                Run
+              </Button>
+            </>
+          )}
+          {isExpanded ? (
+            <ChevronUp className="size-4 text-muted-foreground" />
+          ) : (
+            <ChevronDown className="size-4 text-muted-foreground" />
+          )}
         </div>
       </div>
+
+      {/* Expanded content */}
+      {isExpanded && (
+        <div className="px-4 pb-4 border-t border-amber-500/20">
+          {/* Arguments */}
+          <div className="mt-3">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-section-header text-[10px]">ARGUMENTS</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 px-2 text-xs"
+                onClick={() => setIsEditing(!isEditing)}
+              >
+                <Edit2 className="size-3 mr-1" />
+                {isEditing ? 'Cancel' : 'Edit'}
+              </Button>
+            </div>
+
+            {isEditing ? (
+              <textarea
+                value={editedArgs}
+                onChange={(e) => setEditedArgs(e.target.value)}
+                className="w-full h-32 rounded-sm border border-border bg-background p-2 font-mono text-xs focus:outline-none focus:ring-1 focus:ring-ring"
+              />
+            ) : (
+              <pre className="rounded-sm border border-border bg-background p-2 font-mono text-xs overflow-x-auto max-h-32">
+                {JSON.stringify(args, null, 2)}
+              </pre>
+            )}
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-center justify-end gap-2 mt-3">
+            <Button variant="outline" size="sm" className="h-8" onClick={handleReject}>
+              <X className="size-3.5 mr-1" />
+              Reject
+            </Button>
+            <Button variant="nominal" size="sm" className="h-8" onClick={handleApprove}>
+              <Check className="size-3.5 mr-1" />
+              {isEditing ? 'Apply & Run' : 'Run'}
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

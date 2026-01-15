@@ -24,6 +24,8 @@ interface ToolCallRendererProps {
   toolCall: ToolCall
   result?: string | unknown
   isError?: boolean
+  needsApproval?: boolean
+  onApprovalDecision?: (decision: 'approve' | 'reject' | 'edit') => void
 }
 
 const TOOL_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -261,16 +263,34 @@ function TaskDisplay({ args, isExpanded }: { args: Record<string, unknown>; isEx
   )
 }
 
-export function ToolCallRenderer({ toolCall, result, isError }: ToolCallRendererProps) {
+export function ToolCallRenderer({ toolCall, result, isError, needsApproval, onApprovalDecision }: ToolCallRendererProps) {
+  // Defensive: ensure args is always an object
+  const args = toolCall?.args || {}
+
   const [isExpanded, setIsExpanded] = useState(false)
-  
+
+  // Bail out if no toolCall
+  if (!toolCall) {
+    return null
+  }
+
   const Icon = TOOL_ICONS[toolCall.name] || Terminal
   const label = TOOL_LABELS[toolCall.name] || toolCall.name
   const isPanelSynced = PANEL_SYNCED_TOOLS.has(toolCall.name)
 
+  const handleApprove = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    onApprovalDecision?.('approve')
+  }
+
+  const handleReject = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    onApprovalDecision?.('reject')
+  }
+
   // Format the main argument for display
   const getDisplayArg = () => {
-    const args = toolCall.args
+    if (!args) return null
     if (args.path) return args.path as string
     if (args.file_path) return args.file_path as string
     if (args.command) return (args.command as string).slice(0, 50)
@@ -284,7 +304,7 @@ export function ToolCallRenderer({ toolCall, result, isError }: ToolCallRenderer
 
   // Render formatted content based on tool type
   const renderFormattedContent = () => {
-    const args = toolCall.args
+    if (!args) return null
 
     switch (toolCall.name) {
       case 'write_todos': {
@@ -393,7 +413,18 @@ export function ToolCallRenderer({ toolCall, result, isError }: ToolCallRenderer
       }
 
       case 'execute': {
+        // When expanded, output is shown in CommandDisplay - just show status
+        // When collapsed, show the output preview
         const output = typeof result === 'string' ? result : JSON.stringify(result)
+        if (isExpanded) {
+          return (
+            <div className="text-xs text-status-nominal flex items-center gap-1.5">
+              <CheckCircle2 className="size-3" />
+              <span>Command completed</span>
+            </div>
+          )
+        }
+        // Collapsed view - show output preview
         if (output.trim()) {
           return (
             <div className="space-y-2">
@@ -402,8 +433,8 @@ export function ToolCallRenderer({ toolCall, result, isError }: ToolCallRenderer
                 <span>Command completed</span>
               </div>
               <pre className="text-xs font-mono bg-background rounded-sm p-2 overflow-auto max-h-32 text-muted-foreground whitespace-pre-wrap break-all">
-                {output.slice(0, 1000)}
-                {output.length > 1000 && '...'}
+                {output.slice(0, 500)}
+                {output.length > 500 && '...'}
               </pre>
             </div>
           )
@@ -488,7 +519,10 @@ export function ToolCallRenderer({ toolCall, result, isError }: ToolCallRenderer
   const hasFormattedDisplay = formattedContent || formattedResult
 
   return (
-    <div className="rounded-sm border border-border bg-background-elevated overflow-hidden">
+    <div className={cn(
+      "rounded-sm border overflow-hidden",
+      needsApproval ? "border-amber-500/50 bg-amber-500/5" : "border-border bg-background-elevated"
+    )}>
       {/* Header */}
       <button
         onClick={() => setIsExpanded(!isExpanded)}
@@ -500,7 +534,7 @@ export function ToolCallRenderer({ toolCall, result, isError }: ToolCallRenderer
           <ChevronRight className="size-4 text-muted-foreground shrink-0" />
         )}
         
-        <Icon className="size-4 text-status-info shrink-0" />
+        <Icon className={cn("size-4 shrink-0", needsApproval ? "text-amber-500" : "text-status-info")} />
         
         <span className="text-xs font-medium shrink-0">{label}</span>
         
@@ -510,21 +544,65 @@ export function ToolCallRenderer({ toolCall, result, isError }: ToolCallRenderer
           </span>
         )}
 
-        {result !== undefined && (
+        {needsApproval && (
+          <Badge variant="warning" className="ml-auto shrink-0">
+            APPROVAL
+          </Badge>
+        )}
+
+        {!needsApproval && result === undefined && (
+          <Badge variant="outline" className="ml-auto shrink-0 animate-pulse">
+            RUNNING
+          </Badge>
+        )}
+
+        {result !== undefined && !needsApproval && (
           <Badge variant={isError ? 'critical' : 'nominal'} className="ml-auto shrink-0">
             {isError ? 'ERROR' : 'OK'}
           </Badge>
         )}
         
-        {isPanelSynced && (
+        {isPanelSynced && !needsApproval && (
           <Badge variant="outline" className="shrink-0 text-[9px]">
             SYNCED
           </Badge>
         )}
       </button>
 
-      {/* Formatted content (always visible if present) */}
-      {hasFormattedDisplay && !isExpanded && (
+      {/* Approval UI */}
+      {needsApproval ? (
+        <div className="border-t border-amber-500/20 px-3 py-3 space-y-3">
+          {/* Show formatted content (e.g., command preview) */}
+          {formattedContent}
+          
+          {/* Arguments */}
+          <div>
+            <div className="text-section-header text-[10px] mb-1">ARGUMENTS</div>
+            <pre className="text-xs font-mono bg-background p-2 rounded-sm overflow-auto max-h-24">
+              {JSON.stringify(args, null, 2)}
+            </pre>
+          </div>
+          
+          {/* Action buttons */}
+          <div className="flex items-center justify-end gap-2">
+            <button 
+              className="px-3 py-1.5 text-xs border border-border rounded-sm hover:bg-background-interactive transition-colors"
+              onClick={handleReject}
+            >
+              Reject
+            </button>
+            <button 
+              className="px-3 py-1.5 text-xs bg-status-nominal text-background rounded-sm hover:bg-status-nominal/90 transition-colors"
+              onClick={handleApprove}
+            >
+              Approve & Run
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      {/* Formatted content (only visible when collapsed AND has result) */}
+      {hasFormattedDisplay && !isExpanded && !needsApproval && result !== undefined && (
         <div className="border-t border-border px-3 py-2 space-y-2 overflow-hidden">
           {formattedContent}
           {formattedResult}
@@ -532,7 +610,7 @@ export function ToolCallRenderer({ toolCall, result, isError }: ToolCallRenderer
       )}
 
       {/* Expanded content - raw details */}
-      {isExpanded && (
+      {isExpanded && !needsApproval && (
         <div className="border-t border-border px-3 py-2 space-y-2 overflow-hidden">
           {/* Formatted display first */}
           {formattedContent}
@@ -542,7 +620,7 @@ export function ToolCallRenderer({ toolCall, result, isError }: ToolCallRenderer
           <div className="overflow-hidden w-full">
             <div className="text-section-header mb-1">RAW ARGUMENTS</div>
             <pre className="text-xs font-mono bg-background p-2 rounded-sm overflow-auto max-h-48 w-full whitespace-pre-wrap break-all">
-              {JSON.stringify(toolCall.args, null, 2)}
+              {JSON.stringify(args, null, 2)}
             </pre>
           </div>
 

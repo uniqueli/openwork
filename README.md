@@ -1,29 +1,23 @@
 # openwork
 
-[![CI](https://github.com/langchain-ai/openwork/actions/workflows/ci.yml/badge.svg)](https://github.com/langchain-ai/openwork/actions/workflows/ci.yml)
-[![npm version](https://img.shields.io/npm/v/openwork.svg)](https://www.npmjs.com/package/openwork)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![npm][npm-badge]][npm-url] [![License: MIT][license-badge]][license-url]
 
-A tactical agent interface for [deepagentsjs](https://github.com/langchain-ai/deepagentsjs) - an opinionated harness for building deep agents with filesystem capabilities, planning, and subagent delegation.
+[npm-badge]: https://img.shields.io/npm/v/openwork.svg
+[npm-url]: https://www.npmjs.com/package/openwork
+[license-badge]: https://img.shields.io/badge/License-MIT-yellow.svg
+[license-url]: https://opensource.org/licenses/MIT
+
+A desktop interface for [deepagentsjs](https://github.com/langchain-ai/deepagentsjs) — an opinionated harness for building deep agents with filesystem capabilities planning, and subagent delegation.
 
 ![openwork screenshot](docs/screenshot.png)
 
-## Features
+> [!CAUTION]
+> openwork gives AI agents direct access to your filesystem and the ability to execute shell commands. Always review tool calls before approving them, and only run in workspaces you trust.
 
-- **Chat Interface** - Stream conversations with your AI agent in real-time
-- **TODO Tracking** - Visual task list showing agent's planning progress
-- **Filesystem Browser** - See files the agent reads, writes, and edits
-- **Subagent Monitoring** - Track spawned subagents and their status
-- **Human-in-the-Loop** - Approve, edit, or reject sensitive tool calls
-- **Multi-Model Support** - Use Claude, GPT-4, Gemini, or local models
-- **Thread Persistence** - SQLite-backed conversation history
-
-## Installation
-
-### npm (recommended)
+## Get Started
 
 ```bash
-# Run directly
+# Run directly with npx
 npx openwork
 
 # Or install globally
@@ -31,7 +25,7 @@ npm install -g openwork
 openwork
 ```
 
-Requires Node.js 18+. Electron is installed automatically as a dependency.
+Requires Node.js 18+.
 
 ### From Source
 
@@ -41,103 +35,21 @@ cd openwork
 npm install
 npm run dev
 ```
+Or configure them in-app via the settings panel.
 
-## Configuration
+## Supported Models
 
-### API Keys
-
-openwork supports multiple LLM providers. Set your API keys via:
-
-1. **Environment Variables** (recommended)
-   ```bash
-   export ANTHROPIC_API_KEY="sk-ant-..."
-   export OPENAI_API_KEY="sk-..."
-   export GOOGLE_API_KEY="..."
-   ```
-
-2. **In-App Settings** - Click the settings icon and enter your API keys securely.
-
-### Supported Models
-
-| Provider | Models |
-|----------|--------|
-| Anthropic | Claude Sonnet 4, Claude 3.5 Sonnet, Claude 3.5 Haiku |
-| OpenAI | GPT-4o, GPT-4o Mini |
-| Google | Gemini 2.0 Flash |
-
-## Architecture
-
-openwork is built with:
-
-- **Electron** - Cross-platform desktop framework
-- **React** - UI components with tactical/SCADA-inspired design
-- **deepagentsjs** - Agent harness with planning, filesystem, and subagents
-- **LangGraph** - State machine for agent orchestration
-- **SQLite** - Local persistence for threads and checkpoints
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                     Electron Main Process                    │
-├─────────────────────────────────────────────────────────────┤
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐ │
-│  │ IPC Handlers│  │   SQLite    │  │   DeepAgentsJS      │ │
-│  │  - agent    │  │  - threads  │  │   - createAgent     │ │
-│  │  - threads  │  │  - runs     │  │   - checkpointer    │ │
-│  │  - models   │  │  - assists  │  │   - middleware      │ │
-│  └─────────────┘  └─────────────┘  └─────────────────────┘ │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                         IPC Bridge
-                              │
-┌─────────────────────────────────────────────────────────────┐
-│                    Electron Renderer Process                 │
-├─────────────────────────────────────────────────────────────┤
-│  ┌──────────┐  ┌─────────────────────┐  ┌───────────────┐  │
-│  │ Sidebar  │  │    Chat Interface   │  │  Right Panel  │  │
-│  │ - Threads│  │  - Messages         │  │  - TODOs      │  │
-│  │ - Model  │  │  - Tool Renderers   │  │  - Files      │  │
-│  │ - Config │  │  - Streaming        │  │  - Subagents  │  │
-│  └──────────┘  └─────────────────────┘  └───────────────┘  │
-└─────────────────────────────────────────────────────────────┘
-```
-
-## Development
-
-```bash
-# Install dependencies
-npm install
-
-# Start development server
-npm run dev
-
-# Build for production
-npm run build
-```
-
-## Releases
-
-To publish a new release:
-
-1. Create a git tag: `git tag v0.2.0`
-2. Push the tag: `git push origin v0.2.0`
-3. GitHub Actions will:
-   - Build the application
-   - Publish to npm
-   - Create a GitHub release
-
-## Design System
-
-openwork uses a tactical/SCADA-inspired design system optimized for:
-
-- **Information density** - Dense layouts for monitoring agent activity
-- **Status at a glance** - Color-coded status indicators (nominal, warning, critical)
-- **Dark mode only** - Reduced eye strain for extended sessions
-- **Monospace typography** - JetBrains Mono for data and code
+| Provider  | Models                                                            |
+| --------- | ----------------------------------------------------------------- |
+| Anthropic | Claude Opus 4.5, Claude Sonnet 4.5, Claude Haiku 4.5, Claude Opus 4.1, Claude Sonnet 4 |
+| OpenAI    | GPT-5.2, GPT-5.1, o3, o3 Mini, o4 Mini, o1, GPT-4.1, GPT-4o       |
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for development guidelines.
+We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+Report bugs via [GitHub Issues](https://github.com/langchain-ai/openwork/issues).
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) for details.
+MIT — see [LICENSE](LICENSE) for details.

@@ -435,13 +435,20 @@ export const useAppStore = create<AppState>((set, get) => ({
     const { currentThreadId, pendingApproval } = get()
     if (!currentThreadId || !pendingApproval) return
 
-    await window.api.agent.interrupt(currentThreadId, {
-      type: decision,
-      tool_call_id: pendingApproval.tool_call.id,
-      edited_args: editedArgs
-    })
-
+    // Clear pending approval immediately so UI updates
     set({ pendingApproval: null })
+
+    // Send interrupt decision - streaming response handled by useStream hook
+    window.api.agent.interrupt(
+      currentThreadId,
+      {
+        type: decision,
+        tool_call_id: pendingApproval.tool_call.id,
+        edited_args: editedArgs
+      }
+      // Note: We don't pass onEvent here - the useStream hook in ChatContainer
+      // will pick up the stream events on the same channel
+    )
   },
 
   // Todo actions

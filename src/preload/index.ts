@@ -29,22 +29,16 @@ const api = {
       message: string,
       onEvent: (event: StreamEvent) => void
     ): (() => void) => {
-      console.log('[Preload] invoke() called', { threadId, message: message.substring(0, 50) })
-
       const channel = `agent:stream:${threadId}`
 
       const handler = (_: unknown, data: StreamEvent): void => {
-        console.log('[Preload] Received event:', data.type)
         onEvent(data)
-
-        // Clean up listener on terminal events
         if (data.type === 'done' || data.type === 'error') {
           ipcRenderer.removeListener(channel, handler)
         }
       }
 
       ipcRenderer.on(channel, handler)
-      console.log('[Preload] Sending agent:invoke IPC')
       ipcRenderer.send('agent:invoke', { threadId, message })
 
       // Return cleanup function
@@ -59,15 +53,10 @@ const api = {
       command: unknown,
       onEvent: (event: StreamEvent) => void
     ): (() => void) => {
-      console.log('[Preload] streamAgent() called', { threadId, message: message.substring(0, 50) })
-
       const channel = `agent:stream:${threadId}`
 
       const handler = (_: unknown, data: StreamEvent): void => {
-        console.log('[Preload] Received stream event:', data.type)
         onEvent(data)
-
-        // Clean up listener on terminal events
         if (data.type === 'done' || data.type === 'error') {
           ipcRenderer.removeListener(channel, handler)
         }
@@ -77,10 +66,8 @@ const api = {
 
       // If we have a command, it might be a resume/retry
       if (command) {
-        console.log('[Preload] Sending agent:resume IPC')
         ipcRenderer.send('agent:resume', { threadId, command })
       } else {
-        console.log('[Preload] Sending agent:invoke IPC')
         ipcRenderer.send('agent:invoke', { threadId, message })
       }
 
@@ -89,8 +76,27 @@ const api = {
         ipcRenderer.removeListener(channel, handler)
       }
     },
-    interrupt: (threadId: string, decision: HITLDecision): Promise<void> => {
-      return ipcRenderer.invoke('agent:interrupt', { threadId, decision })
+    interrupt: (
+      threadId: string,
+      decision: HITLDecision,
+      onEvent?: (event: StreamEvent) => void
+    ): (() => void) => {
+      const channel = `agent:stream:${threadId}`
+
+      const handler = (_: unknown, data: StreamEvent): void => {
+        onEvent?.(data)
+        if (data.type === 'done' || data.type === 'error') {
+          ipcRenderer.removeListener(channel, handler)
+        }
+      }
+
+      ipcRenderer.on(channel, handler)
+      ipcRenderer.send('agent:interrupt', { threadId, decision })
+
+      // Return cleanup function
+      return () => {
+        ipcRenderer.removeListener(channel, handler)
+      }
     },
     cancel: (threadId: string): Promise<void> => {
       return ipcRenderer.invoke('agent:cancel', { threadId })

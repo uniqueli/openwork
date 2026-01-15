@@ -1,6 +1,6 @@
 import { User, Bot } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import type { Message } from '@/types'
+import type { Message, HITLRequest } from '@/types'
 import { ToolCallRenderer } from './ToolCallRenderer'
 import { StreamingMarkdown } from './StreamingMarkdown'
 
@@ -13,9 +13,11 @@ interface MessageBubbleProps {
   message: Message
   isStreaming?: boolean
   toolResults?: Map<string, ToolResultInfo>
+  pendingApproval?: HITLRequest | null
+  onApprovalDecision?: (decision: 'approve' | 'reject' | 'edit') => void
 }
 
-export function MessageBubble({ message, isStreaming, toolResults }: MessageBubbleProps) {
+export function MessageBubble({ message, isStreaming, toolResults, pendingApproval, onApprovalDecision }: MessageBubbleProps) {
   const isUser = message.role === 'user'
   const isTool = message.role === 'tool'
 
@@ -40,7 +42,7 @@ export function MessageBubble({ message, isStreaming, toolResults }: MessageBubb
       if (!message.content.trim()) {
         return null
       }
-      
+
       // Use streaming markdown for assistant messages, plain text for user messages
       if (isUser) {
         return (
@@ -81,7 +83,7 @@ export function MessageBubble({ message, isStreaming, toolResults }: MessageBubb
 
   const content = renderContent()
   const hasToolCalls = message.tool_calls && message.tool_calls.length > 0
-  
+
   // Don't render if there's no content and no tool calls
   if (!content && !hasToolCalls) {
     return null
@@ -106,7 +108,7 @@ export function MessageBubble({ message, isStreaming, toolResults }: MessageBubb
         )}>
           {getLabel()}
         </div>
-        
+
         {content && (
           <div className={cn(
             "rounded-sm p-3 overflow-hidden",
@@ -119,14 +121,18 @@ export function MessageBubble({ message, isStreaming, toolResults }: MessageBubb
         {/* Tool calls */}
         {hasToolCalls && (
           <div className="space-y-2 overflow-hidden">
-            {message.tool_calls!.map((toolCall) => {
+            {message.tool_calls!.map((toolCall, index) => {
               const result = toolResults?.get(toolCall.id)
+              const pendingId = pendingApproval?.tool_call?.id
+              const needsApproval = Boolean(pendingId && pendingId === toolCall.id)
               return (
-                <ToolCallRenderer 
-                  key={toolCall.id} 
+                <ToolCallRenderer
+                  key={`${toolCall.id || `tc-${index}`}-${needsApproval ? 'pending' : 'done'}`}
                   toolCall={toolCall}
                   result={result?.content}
                   isError={result?.is_error}
+                  needsApproval={needsApproval}
+                  onApprovalDecision={needsApproval ? onApprovalDecision : undefined}
                 />
               )
             })}

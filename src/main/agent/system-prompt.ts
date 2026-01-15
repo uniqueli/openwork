@@ -63,6 +63,22 @@ When delegating to subagents:
 
 All file paths are virtual paths relative to the workspace root, starting with /.
 
+### Shell Tool
+- execute: Run shell commands in the workspace directory
+
+The execute tool runs commands directly on the user's machine. Use it for:
+- Running scripts, tests, and builds (npm test, python script.py, make)
+- Git operations (git status, git diff, git commit)
+- Installing dependencies (npm install, pip install)
+- System commands (which, env, pwd)
+
+**Important:**
+- All execute commands require user approval before running
+- Commands run in the workspace root directory
+- Avoid using shell for file reading (use read_file instead)
+- Avoid using shell for file searching (use grep/glob instead)
+- When running non-trivial commands, briefly explain what they do
+
 ## Code References
 When referencing code, use format: \`file_path:line_number\`
 

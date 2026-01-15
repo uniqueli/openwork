@@ -1,10 +1,11 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { createDeepAgent, FilesystemBackend } from 'deepagents'
+import { createDeepAgent } from 'deepagents'
 import { getDefaultModel } from '../ipc/models'
 import { getApiKey, getCheckpointDbPath } from '../storage'
 import { ChatAnthropic } from '@langchain/anthropic'
 import { ChatOpenAI } from '@langchain/openai'
 import { SqlJsSaver } from '../checkpointer/sqljs-saver'
+import { LocalSandbox } from './local-sandbox'
 
 import type * as _lcTypes from 'langchain'
 import type * as _lcMessages from '@langchain/core/messages'
@@ -111,9 +112,11 @@ export async function createAgentRuntime(options: CreateAgentRuntimeOptions) {
   const checkpointer = await getCheckpointer()
   console.log('[Runtime] Checkpointer ready')
 
-  const backend = new FilesystemBackend({
+  const backend = new LocalSandbox({
     rootDir: workspacePath,
-    virtualMode: true
+    virtualMode: true,
+    timeout: 120_000, // 2 minutes
+    maxOutputBytes: 100_000 // ~100KB
   })
 
   const systemPrompt = getSystemPrompt(workspacePath)
@@ -122,10 +125,12 @@ export async function createAgentRuntime(options: CreateAgentRuntimeOptions) {
     model,
     checkpointer,
     backend,
-    systemPrompt
+    systemPrompt,
+    // Require human approval for all shell commands
+    interruptOn: { execute: true }
   })
 
-  console.log('[Runtime] Deep agent created with FilesystemBackend at:', workspacePath)
+  console.log('[Runtime] Deep agent created with LocalSandbox at:', workspacePath)
   return agent
 }
 

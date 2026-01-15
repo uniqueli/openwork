@@ -9,7 +9,6 @@ import { ModelSwitcher } from './ModelSwitcher'
 import { Folder } from 'lucide-react'
 import { WorkspacePicker, selectWorkspaceFolder } from './WorkspacePicker'
 import { ChatTodos } from './ChatTodos'
-import { ApprovalDialog } from '@/components/hitl/ApprovalDialog'
 import { ElectronIPCTransport } from '@/lib/electron-transport'
 import type { Message } from '@/types'
 import type { DeepAgent } from '../../../../main/agent/types'
@@ -87,13 +86,14 @@ export function ChatContainer({ threadId }: ChatContainerProps): React.JSX.Eleme
   // Get error for current thread
   const threadError = errorByThread[threadId] || null
 
+  // Debug: log pendingApproval state (moved detailed log after displayMessages)
+
   // Create transport instance (memoized to avoid recreating)
   const transport = useMemo(() => new ElectronIPCTransport(), [])
 
   // Handle custom events from the stream
   const handleCustomEvent = useCallback(
     (data: CustomEventData): void => {
-      console.log('[ChatContainer] Custom event:', data)
       switch (data.type) {
         case 'message':
           if (data.message) {
@@ -116,7 +116,6 @@ export function ChatContainer({ threadId }: ChatContainerProps): React.JSX.Eleme
               ...(isTool && msg.name && { name: msg.name }),
               created_at: msg.created_at ? new Date(msg.created_at) : new Date()
             }
-            console.log('[ChatContainer] Adding message:', storeMsg)
             appendMessage(storeMsg)
           }
           break
@@ -177,6 +176,24 @@ export function ChatContainer({ threadId }: ChatContainerProps): React.JSX.Eleme
       setThreadError(threadId, errorMessage)
     }
   })
+
+  // Handle approval decision - use stream.submit with resume command
+  const handleApprovalDecision = useCallback(async (decision: 'approve' | 'reject' | 'edit') => {
+    if (!pendingApproval) return
+
+    // Clear pending approval first
+    setPendingApproval(null)
+
+    // Submit with a resume command - the transport will send to agent:resume
+    try {
+      await stream.submit(
+        null, // No message needed for resume
+        { command: { resume: { decision } } }
+      )
+    } catch (err) {
+      console.error('[ChatContainer] Resume command failed:', err)
+    }
+  }, [pendingApproval, setPendingApproval, stream])
 
   // Sync todos from stream state
   const agentValues = stream.values as AgentStreamValues | undefined
@@ -386,6 +403,11 @@ export function ChatContainer({ threadId }: ChatContainerProps): React.JSX.Eleme
       clearThreadError(threadId)
     }
 
+    // Clear any pending approval from previous turns
+    if (pendingApproval) {
+      setPendingApproval(null)
+    }
+
     const message = input.trim()
     setInput('')
 
@@ -480,7 +502,13 @@ export function ChatContainer({ threadId }: ChatContainerProps): React.JSX.Eleme
             )}
 
             {displayMessages.map((message) => (
-              <MessageBubble key={message.id} message={message} toolResults={toolResults} />
+              <MessageBubble 
+                key={message.id} 
+                message={message} 
+                toolResults={toolResults}
+                pendingApproval={pendingApproval}
+                onApprovalDecision={handleApprovalDecision}
+              />
             ))}
 
             {/* Streaming indicator and inline TODOs */}
@@ -542,7 +570,7 @@ export function ChatContainer({ threadId }: ChatContainerProps): React.JSX.Eleme
                     <Square className="size-4" />
                   </Button>
                 ) : (
-                  <Button type="submit" variant="default" size="icon" disabled={!input.trim()}>
+                  <Button type="submit" variant="default" size="icon" disabled={!input.trim()} className="rounded-md">
                     <Send className="size-4" />
                   </Button>
                 )}
@@ -557,8 +585,6 @@ export function ChatContainer({ threadId }: ChatContainerProps): React.JSX.Eleme
         </form>
       </div>
 
-      {/* HITL Approval Dialog */}
-      {pendingApproval && <ApprovalDialog request={pendingApproval} />}
     </div>
   )
 }
