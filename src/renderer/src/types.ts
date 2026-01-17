@@ -24,16 +24,18 @@ export interface Run {
 }
 
 // Provider configuration
-export type ProviderId = 'anthropic' | 'openai' | 'google' | 'ollama' | 'custom'
+export type ProviderId = 'anthropic' | 'openai' | 'google' | 'ollama' | 'custom' | string
 
 export interface Provider {
-  id: ProviderId
+  id: string // Changed from ProviderId to string to support dynamic custom providers
   name: string
   hasApiKey: boolean
 }
 
 // Custom API configuration
 export interface CustomApiConfig {
+  id: string // Unique identifier (e.g., "moonshot", "zhipu", "custom-1")
+  name: string // Display name (e.g., "Moonshot AI", "Zhipu AI")
   baseUrl: string
   apiKey: string
   model?: string
@@ -42,7 +44,7 @@ export interface CustomApiConfig {
 export interface ModelConfig {
   id: string
   name: string
-  provider: ProviderId
+  provider: string // Changed from ProviderId to string to support dynamic custom providers
   model: string
   description?: string
   available: boolean

@@ -83,8 +83,10 @@ export function ApiKeyDialog({ open, onOpenChange, provider }: ApiKeyDialogProps
     setSaving(true)
     try {
       if (provider.id === 'custom') {
-        // Save custom API config
+        // Save custom API config with default ID "custom"
         await window.api.models.setCustomApiConfig({
+          id: 'custom',
+          name: 'Custom API',
           baseUrl: baseUrl.trim(),
           apiKey: apiKey.trim(),
           model: modelName.trim() || undefined

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { createDeepAgent } from 'deepagents'
 import { getDefaultModel } from '../ipc/models'
-import { getApiKey, getThreadCheckpointPath, getCustomApiConfig } from '../storage'
+import { getApiKey, getThreadCheckpointPath, getCustomApiConfigs } from '../storage'
 import { ChatAnthropic } from '@langchain/anthropic'
 import { ChatOpenAI } from '@langchain/openai'
 import { ChatGoogleGenerativeAI } from '@langchain/google-genai'
@@ -63,38 +63,51 @@ function getModelInstance(modelId?: string): ChatAnthropic | ChatOpenAI | ChatGo
   const model = modelId || getDefaultModel()
   console.log('[Runtime] Using model:', model)
 
-  // Check if using custom API
-  if (model === 'custom' || model.startsWith('custom-')) {
-    const customConfig = getCustomApiConfig()
-    console.log('[Runtime] Custom API config present:', !!customConfig)
-    if (!customConfig) {
-      throw new Error('Custom API configuration not set')
-    }
+  // Check if this model belongs to a custom API config
+  // Try to find a custom config that matches this model
+  const customConfigs = getCustomApiConfigs()
+  const matchingConfig = customConfigs.find(c => {
+    // Match by model name or by config ID
+    return c.model === model || `custom-${c.id}` === model
+  })
+  
+  if (matchingConfig) {
+    console.log('[Runtime] Found custom API config:', matchingConfig.name)
+    
+    // Clean the API key - remove any whitespace
+    const cleanApiKey = matchingConfig.apiKey?.trim()
     
     console.log('[Runtime] Custom API config:', {
-      baseUrl: customConfig.baseUrl,
-      model: customConfig.model,
-      apiKeyLength: customConfig.apiKey?.length,
-      apiKeyPrefix: customConfig.apiKey?.substring(0, 10),
-      apiKeySuffix: customConfig.apiKey?.substring(customConfig.apiKey.length - 10),
-      apiKeyHasNewline: customConfig.apiKey?.includes('\n'),
-      apiKeyHasSpace: customConfig.apiKey?.includes(' ')
+      id: matchingConfig.id,
+      name: matchingConfig.name,
+      baseUrl: matchingConfig.baseUrl,
+      model: matchingConfig.model,
+      apiKeyLength: matchingConfig.apiKey?.length,
+      cleanApiKeyLength: cleanApiKey?.length,
+      apiKeyPrefix: cleanApiKey?.substring(0, 10)
     })
     
-    // Use OpenAI-compatible client with custom base URL
-    // Try different configuration approaches
-    const chatModel = new ChatOpenAI({
-      model: customConfig.model || model,
-      apiKey: customConfig.apiKey,  // 尝试使用 apiKey 而不是 openAIApiKey
-      configuration: {
-        baseURL: customConfig.baseUrl
-      },
-      timeout: 60000, // 60 seconds timeout
-      maxRetries: 2
-    })
-    
-    console.log('[Runtime] ChatOpenAI instance created')
-    return chatModel
+    // For OpenAI-compatible APIs
+    try {
+      const chatModel = new ChatOpenAI({
+        model: matchingConfig.model || model,
+        openAIApiKey: cleanApiKey,
+        configuration: {
+          baseURL: matchingConfig.baseUrl,
+          defaultHeaders: {
+            'Authorization': `Bearer ${cleanApiKey}`
+          }
+        },
+        timeout: 60000,
+        maxRetries: 2
+      })
+      
+      console.log('[Runtime] ChatOpenAI instance created for custom API:', matchingConfig.name)
+      return chatModel
+    } catch (error) {
+      console.error('[Runtime] Error creating ChatOpenAI instance:', error)
+      throw error
+    }
   }
 
   // Determine provider from model ID

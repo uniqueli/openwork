@@ -1,7 +1,7 @@
 {
   "name": "@uniqueli/openwork",
-  "version": "0.1.0",
-  "description": "A tactical agent interface for deepagentsjs with custom API support",
+  "version": "0.2.0",
+  "description": "A tactical agent interface for deepagentsjs with multiple custom API support",
   "main": "./out/main/index.js",
   "files": [
     "out/",

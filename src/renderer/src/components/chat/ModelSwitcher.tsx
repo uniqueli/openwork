@@ -6,6 +6,7 @@ import { useAppStore } from '@/lib/store'
 import { useCurrentThread } from '@/lib/thread-context'
 import { cn } from '@/lib/utils'
 import { ApiKeyDialog } from './ApiKeyDialog'
+import { AddProviderDialog } from './AddProviderDialog'
 import type { Provider, ProviderId } from '@/types'
 
 // Provider icons as simple SVG components
@@ -43,12 +44,17 @@ function CustomIcon({ className }: { className?: string }) {
   )
 }
 
-const PROVIDER_ICONS: Record<ProviderId, React.FC<{ className?: string }>> = {
+const PROVIDER_ICONS: Record<string, React.FC<{ className?: string }>> = {
   anthropic: AnthropicIcon,
   openai: OpenAIIcon,
   google: GoogleIcon,
   ollama: () => null, // No icon for ollama yet
   custom: CustomIcon
+}
+
+// Get icon for a provider, fallback to CustomIcon for unknown providers
+function getProviderIcon(providerId: string): React.FC<{ className?: string }> {
+  return PROVIDER_ICONS[providerId] || CustomIcon
 }
 
 // Fallback providers in case the backend hasn't loaded them yet
@@ -68,6 +74,7 @@ export function ModelSwitcher({ threadId }: ModelSwitcherProps) {
   const [selectedProviderId, setSelectedProviderId] = useState<ProviderId | null>(null)
   const [apiKeyDialogOpen, setApiKeyDialogOpen] = useState(false)
   const [apiKeyProvider, setApiKeyProvider] = useState<Provider | null>(null)
+  const [addProviderDialogOpen, setAddProviderDialogOpen] = useState(false)
   
   const { models, providers, loadModels, loadProviders } = useAppStore()
   const { currentModel, setCurrentModel } = useCurrentThread(threadId)
@@ -124,6 +131,12 @@ export function ModelSwitcher({ threadId }: ModelSwitcherProps) {
     }
   }
 
+  function handleAddProviderSuccess() {
+    // Refresh providers and models after adding new provider
+    loadProviders()
+    loadModels()
+  }
+
   return (
     <>
       <Popover open={open} onOpenChange={setOpen}>
@@ -135,7 +148,10 @@ export function ModelSwitcher({ threadId }: ModelSwitcherProps) {
           >
             {selectedModel ? (
               <>
-                {PROVIDER_ICONS[selectedModel.provider]?.({ className: 'size-3.5' })}
+                {(() => {
+                  const Icon = getProviderIcon(selectedModel.provider)
+                  return <Icon className="size-3.5" />
+                })()}
                 <span className="font-mono">{selectedModel.id}</span>
               </>
             ) : (
@@ -157,7 +173,7 @@ export function ModelSwitcher({ threadId }: ModelSwitcherProps) {
               </div>
               <div className="space-y-0.5">
                 {displayProviders.map((provider) => {
-                  const Icon = PROVIDER_ICONS[provider.id]
+                  const Icon = getProviderIcon(provider.id)
                   return (
                     <button
                       key={provider.id}
@@ -169,7 +185,7 @@ export function ModelSwitcher({ threadId }: ModelSwitcherProps) {
                           : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                       )}
                     >
-                      {Icon && <Icon className="size-3.5 shrink-0" />}
+                      <Icon className="size-3.5 shrink-0" />
                       <span className="flex-1 truncate">{provider.name}</span>
                       {!provider.hasApiKey && (
                         <AlertCircle className="size-3 text-status-warning shrink-0" />
@@ -177,6 +193,21 @@ export function ModelSwitcher({ threadId }: ModelSwitcherProps) {
                     </button>
                   )
                 })}
+                
+                {/* Add new custom provider button */}
+                <button
+                  onClick={() => {
+                    setOpen(false)
+                    setAddProviderDialogOpen(true)
+                  }}
+                  className="w-full flex items-center justify-center gap-1.5 px-2 py-2 rounded-sm text-xs transition-colors text-muted-foreground hover:text-foreground hover:bg-muted/50 border-t border-border mt-1 pt-2"
+                >
+                  <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                  </svg>
+                  <span>添加Provider</span>
+                </button>
               </div>
             </div>
 
@@ -250,6 +281,12 @@ export function ModelSwitcher({ threadId }: ModelSwitcherProps) {
         open={apiKeyDialogOpen}
         onOpenChange={handleApiKeyDialogClose}
         provider={apiKeyProvider}
+      />
+
+      <AddProviderDialog
+        open={addProviderDialogOpen}
+        onOpenChange={setAddProviderDialogOpen}
+        onSuccess={handleAddProviderSuccess}
       />
     </>
   )

@@ -10,10 +10,9 @@ import {
   setApiKey, 
   deleteApiKey, 
   hasApiKey,
-  getCustomApiConfig,
+  getCustomApiConfigs,
   setCustomApiConfig,
   deleteCustomApiConfig,
-  hasCustomApiConfig,
   type CustomApiConfig
 } from '../storage'
 
@@ -213,11 +212,36 @@ const AVAILABLE_MODELS: ModelConfig[] = [
 export function registerModelHandlers(ipcMain: IpcMain): void {
   // List available models
   ipcMain.handle('models:list', async () => {
+    // Get all custom API configs
+    const customConfigs = getCustomApiConfigs()
+    
+    // Build model list - start with standard models (excluding the generic "custom" entry)
+    const models = AVAILABLE_MODELS.filter(m => m.id !== 'custom')
+    
+    // Add each custom API config as a separate model entry
+    // The model ID is just the custom model name (e.g., "kimi-k2-turbo-preview")
+    // The provider name is the custom config name (e.g., "Moonshot AI")
+    for (const config of customConfigs) {
+      const modelId = config.model || `custom-${config.id}`
+      models.push({
+        id: modelId,
+        name: config.model || config.name, // Display the model name or config name
+        provider: config.id as any, // Use config ID as provider ID (dynamic)
+        model: modelId,
+        description: `${config.name} - ${config.baseUrl}`,
+        available: true
+      })
+    }
+    
     // Check which models have API keys configured
-    return AVAILABLE_MODELS.map((model) => ({
-      ...model,
-      available: model.provider === 'custom' ? hasCustomApiConfig() : hasApiKey(model.provider)
-    }))
+    return models.map((model) => {
+      // For custom configs, they're always available (already configured)
+      const isCustom = customConfigs.some(c => c.id === model.provider)
+      return {
+        ...model,
+        available: isCustom ? true : hasApiKey(model.provider)
+      }
+    })
   })
 
   // Get default model
@@ -250,15 +274,35 @@ export function registerModelHandlers(ipcMain: IpcMain): void {
 
   // List providers with their API key status
   ipcMain.handle('models:listProviders', async () => {
-    return PROVIDERS.map((provider) => ({
+    // Get standard providers
+    const standardProviders = PROVIDERS.filter(p => p.id !== 'custom').map((provider) => ({
       ...provider,
-      hasApiKey: provider.id === 'custom' ? hasCustomApiConfig() : hasApiKey(provider.id)
+      hasApiKey: hasApiKey(provider.id)
     }))
+    
+    // Get custom API configs and add them as providers
+    const customConfigs = getCustomApiConfigs()
+    const customProviders = customConfigs.map(config => ({
+      id: config.id as any, // Dynamic provider ID
+      name: config.name,
+      hasApiKey: true // Custom configs always have their API key
+    }))
+    
+    return [...standardProviders, ...customProviders]
   })
 
-  // Get custom API configuration
-  ipcMain.handle('models:getCustomApiConfig', async () => {
-    return getCustomApiConfig() ?? null
+  // Get custom API configuration (single or by ID)
+  ipcMain.handle('models:getCustomApiConfig', async (_event, id?: string) => {
+    const configs = getCustomApiConfigs()
+    if (!id) {
+      return configs[0] ?? null
+    }
+    return configs.find(c => c.id === id) ?? null
+  })
+
+  // Get all custom API configurations
+  ipcMain.handle('models:getCustomApiConfigs', async () => {
+    return getCustomApiConfigs()
   })
 
   // Set custom API configuration
@@ -267,8 +311,8 @@ export function registerModelHandlers(ipcMain: IpcMain): void {
   })
 
   // Delete custom API configuration
-  ipcMain.handle('models:deleteCustomApiConfig', async () => {
-    deleteCustomApiConfig()
+  ipcMain.handle('models:deleteCustomApiConfig', async (_event, id?: string) => {
+    deleteCustomApiConfig(id)
   })
 
   // Sync version info

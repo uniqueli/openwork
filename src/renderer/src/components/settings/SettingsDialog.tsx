@@ -169,6 +169,8 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
     setSavingCustom(true)
     try {
       await window.api.models.setCustomApiConfig({
+        id: 'custom',
+        name: 'Custom API',
         baseUrl: customConfig.baseUrl,
         apiKey: customConfig.apiKey,
         model: customConfig.model || undefined
@@ -186,7 +188,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
   async function deleteCustomConfig() {
     setSavingCustom(true)
     try {
-      await window.api.models.deleteCustomApiConfig()
+      await window.api.models.deleteCustomApiConfig('custom')
       setCustomConfig({ baseUrl: '', apiKey: '', model: '' })
       setCustomConfigSaved(false)
     } catch (e) {
