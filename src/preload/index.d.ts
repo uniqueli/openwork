@@ -46,6 +46,9 @@ interface CustomAPI {
     setDefault: (modelId: string) => Promise<void>
     setApiKey: (provider: string, apiKey: string) => Promise<void>
     getApiKey: (provider: string) => Promise<string | null>
+    getCustomApiConfig: () => Promise<{ baseUrl: string; apiKey: string; model?: string } | null>
+    setCustomApiConfig: (config: { baseUrl: string; apiKey: string; model?: string }) => Promise<void>
+    deleteCustomApiConfig: () => Promise<void>
   }
   workspace: {
     get: (threadId?: string) => Promise<string | null>

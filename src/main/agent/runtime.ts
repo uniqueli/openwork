@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { createDeepAgent } from 'deepagents'
 import { getDefaultModel } from '../ipc/models'
-import { getApiKey, getThreadCheckpointPath } from '../storage'
+import { getApiKey, getThreadCheckpointPath, getCustomApiConfig } from '../storage'
 import { ChatAnthropic } from '@langchain/anthropic'
 import { ChatOpenAI } from '@langchain/openai'
 import { ChatGoogleGenerativeAI } from '@langchain/google-genai'
@@ -62,6 +62,40 @@ export async function closeCheckpointer(threadId: string): Promise<void> {
 function getModelInstance(modelId?: string): ChatAnthropic | ChatOpenAI | ChatGoogleGenerativeAI | string {
   const model = modelId || getDefaultModel()
   console.log('[Runtime] Using model:', model)
+
+  // Check if using custom API
+  if (model === 'custom' || model.startsWith('custom-')) {
+    const customConfig = getCustomApiConfig()
+    console.log('[Runtime] Custom API config present:', !!customConfig)
+    if (!customConfig) {
+      throw new Error('Custom API configuration not set')
+    }
+    
+    console.log('[Runtime] Custom API config:', {
+      baseUrl: customConfig.baseUrl,
+      model: customConfig.model,
+      apiKeyLength: customConfig.apiKey?.length,
+      apiKeyPrefix: customConfig.apiKey?.substring(0, 10),
+      apiKeySuffix: customConfig.apiKey?.substring(customConfig.apiKey.length - 10),
+      apiKeyHasNewline: customConfig.apiKey?.includes('\n'),
+      apiKeyHasSpace: customConfig.apiKey?.includes(' ')
+    })
+    
+    // Use OpenAI-compatible client with custom base URL
+    // Try different configuration approaches
+    const chatModel = new ChatOpenAI({
+      model: customConfig.model || model,
+      apiKey: customConfig.apiKey,  // 尝试使用 apiKey 而不是 openAIApiKey
+      configuration: {
+        baseURL: customConfig.baseUrl
+      },
+      timeout: 60000, // 60 seconds timeout
+      maxRetries: 2
+    })
+    
+    console.log('[Runtime] ChatOpenAI instance created')
+    return chatModel
+  }
 
   // Determine provider from model ID
   if (model.startsWith('claude')) {

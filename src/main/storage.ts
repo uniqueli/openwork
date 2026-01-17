@@ -9,7 +9,8 @@ const ENV_FILE = join(OPENWORK_DIR, '.env')
 const ENV_VAR_NAMES: Record<string, string> = {
   anthropic: 'ANTHROPIC_API_KEY',
   openai: 'OPENAI_API_KEY',
-  google: 'GOOGLE_API_KEY'
+  google: 'GOOGLE_API_KEY',
+  custom: 'CUSTOM_API_KEY'
 }
 
 export function getOpenworkDir(): string {
@@ -119,4 +120,58 @@ export function deleteApiKey(provider: string): void {
 
 export function hasApiKey(provider: string): boolean {
   return !!getApiKey(provider)
+}
+
+// Custom API configuration management
+export interface CustomApiConfig {
+  baseUrl: string
+  apiKey: string
+  model?: string
+}
+
+export function getCustomApiConfig(): CustomApiConfig | undefined {
+  const env = parseEnvFile()
+  const baseUrl = env.CUSTOM_BASE_URL
+  const apiKey = env.CUSTOM_API_KEY
+  const model = env.CUSTOM_MODEL
+
+  if (!baseUrl || !apiKey) return undefined
+
+  return { baseUrl, apiKey, model }
+}
+
+export function setCustomApiConfig(config: CustomApiConfig): void {
+  const env = parseEnvFile()
+  env.CUSTOM_BASE_URL = config.baseUrl
+  env.CUSTOM_API_KEY = config.apiKey
+  if (config.model) {
+    env.CUSTOM_MODEL = config.model
+  } else {
+    delete env.CUSTOM_MODEL
+  }
+  writeEnvFile(env)
+
+  // Also set in process.env for current session
+  process.env.CUSTOM_BASE_URL = config.baseUrl
+  process.env.CUSTOM_API_KEY = config.apiKey
+  if (config.model) {
+    process.env.CUSTOM_MODEL = config.model
+  }
+}
+
+export function deleteCustomApiConfig(): void {
+  const env = parseEnvFile()
+  delete env.CUSTOM_BASE_URL
+  delete env.CUSTOM_API_KEY
+  delete env.CUSTOM_MODEL
+  writeEnvFile(env)
+
+  // Also clear from process.env
+  delete process.env.CUSTOM_BASE_URL
+  delete process.env.CUSTOM_API_KEY
+  delete process.env.CUSTOM_MODEL
+}
+
+export function hasCustomApiConfig(): boolean {
+  return !!getCustomApiConfig()
 }

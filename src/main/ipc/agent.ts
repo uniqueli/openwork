@@ -48,10 +48,11 @@ export function registerAgentHandlers(ipcMain: IpcMain): void {
       window.once('closed', onWindowClosed)
 
       try {
-        // Get workspace path from thread metadata - REQUIRED
+        // Get workspace path and model from thread metadata - REQUIRED
         const thread = getThread(threadId)
         const metadata = thread?.metadata ? JSON.parse(thread.metadata) : {}
         const workspacePath = metadata.workspacePath as string | undefined
+        const currentModel = metadata.currentModel as string | undefined
 
         if (!workspacePath) {
           window.webContents.send(channel, {
@@ -62,7 +63,11 @@ export function registerAgentHandlers(ipcMain: IpcMain): void {
           return
         }
 
-        const agent = await createAgentRuntime({ threadId, workspacePath })
+        const agent = await createAgentRuntime({ 
+          threadId, 
+          workspacePath,
+          modelId: currentModel 
+        })
         const humanMessage = new HumanMessage(message)
 
         // Stream with both modes:
@@ -139,10 +144,11 @@ export function registerAgentHandlers(ipcMain: IpcMain): void {
         return
       }
 
-      // Get workspace path from thread metadata
+      // Get workspace path and model from thread metadata
       const thread = getThread(threadId)
       const metadata = thread?.metadata ? JSON.parse(thread.metadata) : {}
       const workspacePath = metadata.workspacePath as string | undefined
+      const currentModel = metadata.currentModel as string | undefined
 
       if (!workspacePath) {
         window.webContents.send(channel, {
@@ -163,7 +169,11 @@ export function registerAgentHandlers(ipcMain: IpcMain): void {
       activeRuns.set(threadId, abortController)
 
       try {
-        const agent = await createAgentRuntime({ threadId, workspacePath })
+        const agent = await createAgentRuntime({ 
+          threadId, 
+          workspacePath,
+          modelId: currentModel 
+        })
         const config = {
           configurable: { thread_id: threadId },
           signal: abortController.signal,
@@ -223,10 +233,11 @@ export function registerAgentHandlers(ipcMain: IpcMain): void {
         return
       }
 
-      // Get workspace path from thread metadata - REQUIRED
+      // Get workspace path and model from thread metadata - REQUIRED
       const thread = getThread(threadId)
       const metadata = thread?.metadata ? JSON.parse(thread.metadata) : {}
       const workspacePath = metadata.workspacePath as string | undefined
+      const currentModel = metadata.currentModel as string | undefined
 
       if (!workspacePath) {
         window.webContents.send(channel, {
@@ -247,7 +258,11 @@ export function registerAgentHandlers(ipcMain: IpcMain): void {
       activeRuns.set(threadId, abortController)
 
       try {
-        const agent = await createAgentRuntime({ threadId, workspacePath })
+        const agent = await createAgentRuntime({ 
+          threadId, 
+          workspacePath,
+          modelId: currentModel 
+        })
         const config = {
           configurable: { thread_id: threadId },
           signal: abortController.signal,

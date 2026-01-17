@@ -25,12 +25,19 @@ export interface Run {
 }
 
 // Provider configuration
-export type ProviderId = 'anthropic' | 'openai' | 'google' | 'ollama'
+export type ProviderId = 'anthropic' | 'openai' | 'google' | 'ollama' | 'custom'
 
 export interface Provider {
   id: ProviderId
   name: string
   hasApiKey: boolean
+}
+
+// Custom API configuration
+export interface CustomApiConfig {
+  baseUrl: string
+  apiKey: string
+  model?: string
 }
 
 // Model configuration

@@ -4,7 +4,18 @@ import * as fs from 'fs/promises'
 import * as path from 'path'
 import type { ModelConfig, Provider } from '../types'
 import { startWatching, stopWatching } from '../services/workspace-watcher'
-import { getOpenworkDir, getApiKey, setApiKey, deleteApiKey, hasApiKey } from '../storage'
+import { 
+  getOpenworkDir, 
+  getApiKey, 
+  setApiKey, 
+  deleteApiKey, 
+  hasApiKey,
+  getCustomApiConfig,
+  setCustomApiConfig,
+  deleteCustomApiConfig,
+  hasCustomApiConfig,
+  type CustomApiConfig
+} from '../storage'
 
 // Store for non-sensitive settings only (no encryption needed)
 const store = new Store({
@@ -16,7 +27,8 @@ const store = new Store({
 const PROVIDERS: Omit<Provider, 'hasApiKey'>[] = [
   { id: 'anthropic', name: 'Anthropic' },
   { id: 'openai', name: 'OpenAI' },
-  { id: 'google', name: 'Google' }
+  { id: 'google', name: 'Google' },
+  { id: 'custom', name: 'Custom API' }
 ]
 
 // Available models configuration (updated Jan 2026)
@@ -186,6 +198,15 @@ const AVAILABLE_MODELS: ModelConfig[] = [
     model: 'gemini-2.5-flash-lite',
     description: 'Fast, low-cost, high-performance model',
     available: true
+  },
+  // Custom API
+  {
+    id: 'custom',
+    name: 'Custom API',
+    provider: 'custom',
+    model: 'custom',
+    description: 'Use your own OpenAI-compatible API endpoint',
+    available: true
   }
 ]
 
@@ -195,7 +216,7 @@ export function registerModelHandlers(ipcMain: IpcMain): void {
     // Check which models have API keys configured
     return AVAILABLE_MODELS.map((model) => ({
       ...model,
-      available: hasApiKey(model.provider)
+      available: model.provider === 'custom' ? hasCustomApiConfig() : hasApiKey(model.provider)
     }))
   })
 
@@ -231,8 +252,23 @@ export function registerModelHandlers(ipcMain: IpcMain): void {
   ipcMain.handle('models:listProviders', async () => {
     return PROVIDERS.map((provider) => ({
       ...provider,
-      hasApiKey: hasApiKey(provider.id)
+      hasApiKey: provider.id === 'custom' ? hasCustomApiConfig() : hasApiKey(provider.id)
     }))
+  })
+
+  // Get custom API configuration
+  ipcMain.handle('models:getCustomApiConfig', async () => {
+    return getCustomApiConfig() ?? null
+  })
+
+  // Set custom API configuration
+  ipcMain.handle('models:setCustomApiConfig', async (_event, config: CustomApiConfig) => {
+    setCustomApiConfig(config)
+  })
+
+  // Delete custom API configuration
+  ipcMain.handle('models:deleteCustomApiConfig', async () => {
+    deleteCustomApiConfig()
   })
 
   // Sync version info

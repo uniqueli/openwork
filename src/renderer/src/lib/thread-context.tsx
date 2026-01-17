@@ -437,6 +437,16 @@ export function ThreadProvider({ children }: { children: ReactNode }) {
         },
         setCurrentModel: (modelId: string) => {
           updateThreadState(threadId, () => ({ currentModel: modelId }))
+          // Also persist to thread metadata
+          window.api.threads.get(threadId).then((thread) => {
+            if (thread) {
+              const metadata = thread.metadata ? (typeof thread.metadata === 'string' ? JSON.parse(thread.metadata) : thread.metadata) : {}
+              metadata.currentModel = modelId
+              window.api.threads.update(threadId, { metadata })
+            }
+          }).catch((error) => {
+            console.error('[ThreadContext] Failed to persist currentModel:', error)
+          })
         },
         openFile: (path: string, name: string) => {
           updateThreadState(threadId, (state) => {
@@ -479,6 +489,19 @@ export function ThreadProvider({ children }: { children: ReactNode }) {
   const loadThreadHistory = useCallback(
     async (threadId: string) => {
       const actions = getThreadActions(threadId)
+
+      // Load thread metadata (including currentModel)
+      try {
+        const thread = await window.api.threads.get(threadId)
+        if (thread?.metadata) {
+          const metadata = typeof thread.metadata === 'string' ? JSON.parse(thread.metadata) : thread.metadata
+          if (metadata.currentModel) {
+            actions.setCurrentModel(metadata.currentModel)
+          }
+        }
+      } catch (error) {
+        console.error('[ThreadContext] Failed to load thread metadata:', error)
+      }
 
       // Load workspace path
       try {

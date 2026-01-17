@@ -21,7 +21,8 @@ interface ApiKeyDialogProps {
 const PROVIDER_INFO: Record<string, { placeholder: string; envVar: string }> = {
   anthropic: { placeholder: 'sk-ant-...', envVar: 'ANTHROPIC_API_KEY' },
   openai: { placeholder: 'sk-...', envVar: 'OPENAI_API_KEY' },
-  google: { placeholder: 'AIza...', envVar: 'GOOGLE_API_KEY' }
+  google: { placeholder: 'AIza...', envVar: 'GOOGLE_API_KEY' },
+  custom: { placeholder: 'your-api-key', envVar: 'CUSTOM_API_KEY' }
 }
 
 export function ApiKeyDialog({ open, onOpenChange, provider }: ApiKeyDialogProps) {
@@ -31,6 +32,10 @@ export function ApiKeyDialog({ open, onOpenChange, provider }: ApiKeyDialogProps
   const [deleting, setDeleting] = useState(false)
   const [hasExistingKey, setHasExistingKey] = useState(false)
   
+  // Custom API specific fields
+  const [baseUrl, setBaseUrl] = useState('')
+  const [modelName, setModelName] = useState('')
+  
   const { setApiKey: saveApiKey, deleteApiKey } = useAppStore()
 
   // Check if there's an existing key when dialog opens
@@ -39,8 +44,27 @@ export function ApiKeyDialog({ open, onOpenChange, provider }: ApiKeyDialogProps
       setHasExistingKey(provider.hasApiKey)
       setApiKey('')
       setShowKey(false)
+      setBaseUrl('')
+      setModelName('')
+      
+      // Load existing custom API config if it's custom provider
+      if (provider.id === 'custom' && provider.hasApiKey) {
+        loadCustomConfig()
+      }
     }
   }, [open, provider])
+
+  async function loadCustomConfig() {
+    try {
+      const config = await window.api.models.getCustomApiConfig()
+      if (config) {
+        setBaseUrl(config.baseUrl)
+        setModelName(config.model || '')
+      }
+    } catch (e) {
+      console.error('Failed to load custom config:', e)
+    }
+  }
 
   if (!provider) return null
 
@@ -50,10 +74,25 @@ export function ApiKeyDialog({ open, onOpenChange, provider }: ApiKeyDialogProps
     if (!apiKey.trim()) return
     if (!provider) return
     
+    // For custom API, also need baseUrl
+    if (provider.id === 'custom' && !baseUrl.trim()) {
+      return
+    }
+    
     console.log('[ApiKeyDialog] Saving API key for provider:', provider.id)
     setSaving(true)
     try {
-      await saveApiKey(provider.id, apiKey.trim())
+      if (provider.id === 'custom') {
+        // Save custom API config
+        await window.api.models.setCustomApiConfig({
+          baseUrl: baseUrl.trim(),
+          apiKey: apiKey.trim(),
+          model: modelName.trim() || undefined
+        })
+      } else {
+        // Save regular API key
+        await saveApiKey(provider.id, apiKey.trim())
+      }
       console.log('[ApiKeyDialog] API key saved successfully')
       onOpenChange(false)
     } catch (e) {
@@ -67,7 +106,11 @@ export function ApiKeyDialog({ open, onOpenChange, provider }: ApiKeyDialogProps
     if (!provider) return
     setDeleting(true)
     try {
-      await deleteApiKey(provider.id)
+      if (provider.id === 'custom') {
+        await window.api.models.deleteCustomApiConfig()
+      } else {
+        await deleteApiKey(provider.id)
+      }
       onOpenChange(false)
     } catch (e) {
       console.error('Failed to delete API key:', e)
@@ -92,7 +135,26 @@ export function ApiKeyDialog({ open, onOpenChange, provider }: ApiKeyDialogProps
         </DialogHeader>
 
         <div className="space-y-4 py-2">
+          {provider.id === 'custom' && (
+            <div className="space-y-2">
+              <label className="text-xs text-muted-foreground">Base URL</label>
+              <Input
+                type="text"
+                value={baseUrl}
+                onChange={(e) => setBaseUrl(e.target.value)}
+                placeholder="https://api.example.com/v1"
+                autoFocus
+              />
+              <p className="text-xs text-muted-foreground">
+                Environment variable: <code className="text-foreground">CUSTOM_BASE_URL</code>
+              </p>
+            </div>
+          )}
+          
           <div className="space-y-2">
+            <label className="text-xs text-muted-foreground">
+              {provider.id === 'custom' ? 'API Key' : 'API Key'}
+            </label>
             <div className="relative">
               <Input
                 type={showKey ? 'text' : 'password'}
@@ -100,7 +162,7 @@ export function ApiKeyDialog({ open, onOpenChange, provider }: ApiKeyDialogProps
                 onChange={(e) => setApiKey(e.target.value)}
                 placeholder={hasExistingKey ? '••••••••••••••••' : info.placeholder}
                 className="pr-10"
-                autoFocus
+                autoFocus={provider.id !== 'custom'}
               />
               <button
                 type="button"
@@ -114,6 +176,21 @@ export function ApiKeyDialog({ open, onOpenChange, provider }: ApiKeyDialogProps
               Environment variable: <code className="text-foreground">{info.envVar}</code>
             </p>
           </div>
+
+          {provider.id === 'custom' && (
+            <div className="space-y-2">
+              <label className="text-xs text-muted-foreground">Model Name (Optional)</label>
+              <Input
+                type="text"
+                value={modelName}
+                onChange={(e) => setModelName(e.target.value)}
+                placeholder="gpt-4, claude-3-opus, etc."
+              />
+              <p className="text-xs text-muted-foreground">
+                Environment variable: <code className="text-foreground">CUSTOM_MODEL</code>
+              </p>
+            </div>
+          )}
         </div>
 
         <div className="flex justify-between">
@@ -142,7 +219,11 @@ export function ApiKeyDialog({ open, onOpenChange, provider }: ApiKeyDialogProps
             <Button
               type="button"
               onClick={handleSave}
-              disabled={!apiKey.trim() || saving}
+              disabled={
+                !apiKey.trim() || 
+                saving || 
+                (provider.id === 'custom' && !baseUrl.trim())
+              }
             >
               {saving ? (
                 <Loader2 className="size-4 animate-spin" />

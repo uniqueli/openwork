@@ -146,6 +146,15 @@ const api = {
     },
     deleteApiKey: (provider: string): Promise<void> => {
       return ipcRenderer.invoke('models:deleteApiKey', provider)
+    },
+    getCustomApiConfig: (): Promise<{ baseUrl: string; apiKey: string; model?: string } | null> => {
+      return ipcRenderer.invoke('models:getCustomApiConfig')
+    },
+    setCustomApiConfig: (config: { baseUrl: string; apiKey: string; model?: string }): Promise<void> => {
+      return ipcRenderer.invoke('models:setCustomApiConfig', config)
+    },
+    deleteCustomApiConfig: (): Promise<void> => {
+      return ipcRenderer.invoke('models:deleteCustomApiConfig')
     }
   },
   workspace: {
