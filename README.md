@@ -1,13 +1,15 @@
-# openwork
+# @uniqueli/openwork
 
 [![npm][npm-badge]][npm-url] [![License: MIT][license-badge]][license-url]
 
-[npm-badge]: https://img.shields.io/npm/v/openwork.svg
-[npm-url]: https://www.npmjs.com/package/openwork
+[npm-badge]: https://img.shields.io/npm/v/@uniqueli/openwork.svg
+[npm-url]: https://www.npmjs.com/package/@uniqueli/openwork
 [license-badge]: https://img.shields.io/badge/License-MIT-yellow.svg
 [license-url]: https://opensource.org/licenses/MIT
 
-A desktop interface for [deepagentsjs](https://github.com/langchain-ai/deepagentsjs) — an opinionated harness for building deep agents with filesystem capabilities planning, and subagent delegation.
+A desktop interface for [deepagentsjs](https://github.com/langchain-ai/deepagentsjs) — an opinionated harness for building deep agents with filesystem capabilities, planning, and subagent delegation.
+
+**Enhanced with Custom API Support** - Configure any OpenAI-compatible API endpoint!
 
 ![openwork screenshot](docs/screenshot.png)
 
@@ -18,10 +20,10 @@ A desktop interface for [deepagentsjs](https://github.com/langchain-ai/deepagent
 
 ```bash
 # Run directly with npx
-npx openwork
+npx @uniqueli/openwork
 
 # Or install globally
-npm install -g openwork
+npm install -g @uniqueli/openwork
 openwork
 ```
 
@@ -30,7 +32,7 @@ Requires Node.js 18+.
 ### From Source
 
 ```bash
-git clone https://github.com/langchain-ai/openwork.git
+git clone https://github.com/uniqueli/openwork.git
 cd openwork
 npm install
 npm run dev
@@ -66,7 +68,11 @@ See [CUSTOM_API.md](CUSTOM_API.md) for detailed instructions.
 
 We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
-Report bugs via [GitHub Issues](https://github.com/langchain-ai/openwork/issues).
+Report bugs via [GitHub Issues](https://github.com/uniqueli/openwork/issues).
+
+## Credits
+
+This project is a fork of [openwork by LangChain](https://github.com/langchain-ai/openwork) with enhanced custom API support.
 
 ## License
 
