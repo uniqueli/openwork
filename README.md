@@ -100,6 +100,11 @@ See [CUSTOM_API.md](CUSTOM_API.md) for detailed instructions.
 
 ## Changelog
 
+### v0.2.1 (2026-01-19)
+- 🐛 **Critical Fix**: Fixed "Missing credentials" error for users without OpenAI API key
+- 🔧 Custom API now works correctly even when OPENAI_API_KEY is not set in environment
+- 📝 Improved logging for debugging custom API configurations
+
 ### v0.2.0 (2026-01-18)
 - ✨ **Multiple Custom API Providers**: Add unlimited custom providers via UI
 - 🎨 **Improved UX**: One-click provider addition with "+ 添加Provider" button

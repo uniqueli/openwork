@@ -87,6 +87,13 @@ function getModelInstance(modelId?: string): ChatAnthropic | ChatOpenAI | ChatGo
       apiKeyPrefix: cleanApiKey?.substring(0, 10)
     })
     
+    // WORKAROUND: Set OPENAI_API_KEY environment variable for deepagents
+    // deepagents may create internal model instances that need this
+    if (cleanApiKey) {
+      process.env.OPENAI_API_KEY = cleanApiKey
+      console.log('[Runtime] Set OPENAI_API_KEY environment variable for deepagents compatibility')
+    }
+    
     // For OpenAI-compatible APIs
     try {
       const chatModel = new ChatOpenAI({
