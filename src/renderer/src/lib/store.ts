@@ -1,5 +1,5 @@
-import { create } from 'zustand'
-import type { Thread, ModelConfig, Provider } from '@/types'
+import { create } from "zustand"
+import type { Thread, ModelConfig, Provider } from "@/types"
 
 interface AppState {
   // Threads
@@ -11,13 +11,17 @@ interface AppState {
   providers: Provider[]
 
   // Right panel state (UI state, not thread data)
-  rightPanelTab: 'todos' | 'files' | 'subagents'
+  rightPanelTab: "todos" | "files" | "subagents"
 
   // Settings dialog state
   settingsOpen: boolean
 
   // Sidebar state
   sidebarCollapsed: boolean
+
+  // Kanban view state
+  showKanbanView: boolean
+  showSubagentsInKanban: boolean
 
   // Thread actions
   loadThreads: () => Promise<void>
@@ -34,7 +38,7 @@ interface AppState {
   deleteApiKey: (providerId: string) => Promise<void>
 
   // Panel actions
-  setRightPanelTab: (tab: 'todos' | 'files' | 'subagents') => void
+  setRightPanelTab: (tab: "todos" | "files" | "subagents") => void
 
   // Settings actions
   setSettingsOpen: (open: boolean) => void
@@ -42,6 +46,10 @@ interface AppState {
   // Sidebar actions
   toggleSidebar: () => void
   setSidebarCollapsed: (collapsed: boolean) => void
+
+  // Kanban actions
+  setShowKanbanView: (show: boolean) => void
+  setShowSubagentsInKanban: (show: boolean) => void
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -50,9 +58,11 @@ export const useAppStore = create<AppState>((set, get) => ({
   currentThreadId: null,
   models: [],
   providers: [],
-  rightPanelTab: 'todos',
+  rightPanelTab: "todos",
   settingsOpen: false,
   sidebarCollapsed: false,
+  showKanbanView: false,
+  showSubagentsInKanban: true,
 
   // Thread actions
   loadThreads: async () => {
@@ -69,21 +79,23 @@ export const useAppStore = create<AppState>((set, get) => ({
     const thread = await window.api.threads.create(metadata)
     set((state) => ({
       threads: [thread, ...state.threads],
-      currentThreadId: thread.thread_id
+      currentThreadId: thread.thread_id,
+      showKanbanView: false
     }))
     return thread
   },
 
   selectThread: async (threadId: string) => {
     // Just update currentThreadId - ThreadContext handles per-thread state
-    set({ currentThreadId: threadId })
+    // Also close kanban view when selecting a thread
+    set({ currentThreadId: threadId, showKanbanView: false })
   },
 
   deleteThread: async (threadId: string) => {
-    console.log('[Store] Deleting thread:', threadId)
+    console.log("[Store] Deleting thread:", threadId)
     try {
       await window.api.threads.delete(threadId)
-      console.log('[Store] Thread deleted from backend')
+      console.log("[Store] Thread deleted from backend")
 
       set((state) => {
         const threads = state.threads.filter((t) => t.thread_id !== threadId)
@@ -98,7 +110,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         }
       })
     } catch (error) {
-      console.error('[Store] Failed to delete thread:', error)
+      console.error("[Store] Failed to delete thread:", error)
     }
   },
 
@@ -114,7 +126,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       const generatedTitle = await window.api.threads.generateTitle(content)
       await get().updateThread(threadId, { title: generatedTitle })
     } catch (error) {
-      console.error('[Store] Failed to generate title:', error)
+      console.error("[Store] Failed to generate title:", error)
     }
   },
 
@@ -130,16 +142,16 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   setApiKey: async (providerId: string, apiKey: string) => {
-    console.log('[Store] setApiKey called:', { providerId, keyLength: apiKey.length })
+    console.log("[Store] setApiKey called:", { providerId, keyLength: apiKey.length })
     try {
       await window.api.models.setApiKey(providerId, apiKey)
-      console.log('[Store] API key saved via IPC')
+      console.log("[Store] API key saved via IPC")
       // Reload providers and models to update availability
       await get().loadProviders()
       await get().loadModels()
-      console.log('[Store] Providers and models reloaded')
+      console.log("[Store] Providers and models reloaded")
     } catch (e) {
-      console.error('[Store] Failed to set API key:', e)
+      console.error("[Store] Failed to set API key:", e)
       throw e
     }
   },
@@ -152,7 +164,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   // Panel actions
-  setRightPanelTab: (tab: 'todos' | 'files' | 'subagents') => {
+  setRightPanelTab: (tab: "todos" | "files" | "subagents") => {
     set({ rightPanelTab: tab })
   },
 
@@ -168,5 +180,18 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   setSidebarCollapsed: (collapsed: boolean) => {
     set({ sidebarCollapsed: collapsed })
+  },
+
+  // Kanban actions
+  setShowKanbanView: (show: boolean) => {
+    if (show) {
+      set({ showKanbanView: true, currentThreadId: null })
+    } else {
+      set({ showKanbanView: false })
+    }
+  },
+
+  setShowSubagentsInKanban: (show: boolean) => {
+    set({ showSubagentsInKanban: show })
   }
 }))

@@ -1,16 +1,16 @@
-import { useState, useEffect } from 'react'
-import { Eye, EyeOff, Loader2, Trash2 } from 'lucide-react'
+import { useState, useEffect } from "react"
+import { Eye, EyeOff, Loader2, Trash2 } from "lucide-react"
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle
-} from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { useAppStore } from '@/lib/store'
-import type { Provider } from '@/types'
+} from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { useAppStore } from "@/lib/store"
+import type { Provider } from "@/types"
 
 interface ApiKeyDialogProps {
   open: boolean
@@ -19,36 +19,39 @@ interface ApiKeyDialogProps {
 }
 
 const PROVIDER_INFO: Record<string, { placeholder: string; envVar: string }> = {
-  anthropic: { placeholder: 'sk-ant-...', envVar: 'ANTHROPIC_API_KEY' },
-  openai: { placeholder: 'sk-...', envVar: 'OPENAI_API_KEY' },
-  google: { placeholder: 'AIza...', envVar: 'GOOGLE_API_KEY' },
-  custom: { placeholder: 'your-api-key', envVar: 'CUSTOM_API_KEY' }
+  anthropic: { placeholder: "sk-ant-...", envVar: "ANTHROPIC_API_KEY" },
+  openai: { placeholder: "sk-...", envVar: "OPENAI_API_KEY" },
+  google: { placeholder: "AIza...", envVar: "GOOGLE_API_KEY" }
 }
 
-export function ApiKeyDialog({ open, onOpenChange, provider }: ApiKeyDialogProps) {
-  const [apiKey, setApiKey] = useState('')
+export function ApiKeyDialog({
+  open,
+  onOpenChange,
+  provider
+}: ApiKeyDialogProps): React.JSX.Element | null {
+  const [apiKey, setApiKey] = useState("")
   const [showKey, setShowKey] = useState(false)
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [hasExistingKey, setHasExistingKey] = useState(false)
-  
+
   // Custom API specific fields
-  const [baseUrl, setBaseUrl] = useState('')
-  const [modelName, setModelName] = useState('')
-  
+  const [baseUrl, setBaseUrl] = useState("")
+  const [modelName, setModelName] = useState("")
+
   const { setApiKey: saveApiKey, deleteApiKey } = useAppStore()
 
   // Check if there's an existing key when dialog opens
   useEffect(() => {
     if (open && provider) {
       setHasExistingKey(provider.hasApiKey)
-      setApiKey('')
+      setApiKey("")
       setShowKey(false)
-      setBaseUrl('')
-      setModelName('')
-      
+      setBaseUrl("")
+      setModelName("")
+
       // Load existing custom API config if it's custom provider
-      if (provider.id === 'custom' && provider.hasApiKey) {
+      if (provider.id === "custom" && provider.hasApiKey) {
         loadCustomConfig()
       }
     }
@@ -59,34 +62,34 @@ export function ApiKeyDialog({ open, onOpenChange, provider }: ApiKeyDialogProps
       const config = await window.api.models.getCustomApiConfig()
       if (config) {
         setBaseUrl(config.baseUrl)
-        setModelName(config.model || '')
+        setModelName(config.model || "")
       }
     } catch (e) {
-      console.error('Failed to load custom config:', e)
+      console.error("Failed to load custom config:", e)
     }
   }
 
   if (!provider) return null
 
-  const info = PROVIDER_INFO[provider.id] || { placeholder: '...', envVar: '' }
+  const info = PROVIDER_INFO[provider.id] || { placeholder: "...", envVar: "" }
 
-  async function handleSave() {
+  async function handleSave(): Promise<void> {
     if (!apiKey.trim()) return
     if (!provider) return
-    
+
     // For custom API, also need baseUrl
-    if (provider.id === 'custom' && !baseUrl.trim()) {
+    if (provider.id === "custom" && !baseUrl.trim()) {
       return
     }
-    
-    console.log('[ApiKeyDialog] Saving API key for provider:', provider.id)
+
+    console.log("[ApiKeyDialog] Saving API key for provider:", provider.id)
     setSaving(true)
     try {
-      if (provider.id === 'custom') {
+      if (provider.id === "custom") {
         // Save custom API config with default ID "custom"
         await window.api.models.setCustomApiConfig({
-          id: 'custom',
-          name: 'Custom API',
+          id: "custom",
+          name: "Custom API",
           baseUrl: baseUrl.trim(),
           apiKey: apiKey.trim(),
           model: modelName.trim() || undefined
@@ -95,27 +98,27 @@ export function ApiKeyDialog({ open, onOpenChange, provider }: ApiKeyDialogProps
         // Save regular API key
         await saveApiKey(provider.id, apiKey.trim())
       }
-      console.log('[ApiKeyDialog] API key saved successfully')
+      console.log("[ApiKeyDialog] API key saved successfully")
       onOpenChange(false)
     } catch (e) {
-      console.error('[ApiKeyDialog] Failed to save API key:', e)
+      console.error("[ApiKeyDialog] Failed to save API key:", e)
     } finally {
       setSaving(false)
     }
   }
 
-  async function handleDelete() {
+  async function handleDelete(): Promise<void> {
     if (!provider) return
     setDeleting(true)
     try {
-      if (provider.id === 'custom') {
+      if (provider.id === "custom") {
         await window.api.models.deleteCustomApiConfig()
       } else {
         await deleteApiKey(provider.id)
       }
       onOpenChange(false)
     } catch (e) {
-      console.error('Failed to delete API key:', e)
+      console.error("Failed to delete API key:", e)
     } finally {
       setDeleting(false)
     }
@@ -129,15 +132,14 @@ export function ApiKeyDialog({ open, onOpenChange, provider }: ApiKeyDialogProps
             {hasExistingKey ? `Update ${provider.name} API Key` : `Add ${provider.name} API Key`}
           </DialogTitle>
           <DialogDescription>
-            {hasExistingKey 
-              ? 'Enter a new API key to replace the existing one, or remove it.'
-              : `Enter your ${provider.name} API key to use their models.`
-            }
+            {hasExistingKey
+              ? "Enter a new API key to replace the existing one, or remove it."
+              : `Enter your ${provider.name} API key to use their models.`}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-2">
-          {provider.id === 'custom' && (
+          {provider.id === "custom" && (
             <div className="space-y-2">
               <label className="text-xs text-muted-foreground">Base URL</label>
               <Input
@@ -152,19 +154,19 @@ export function ApiKeyDialog({ open, onOpenChange, provider }: ApiKeyDialogProps
               </p>
             </div>
           )}
-          
+
           <div className="space-y-2">
             <label className="text-xs text-muted-foreground">
-              {provider.id === 'custom' ? 'API Key' : 'API Key'}
+              {provider.id === "custom" ? "API Key" : "API Key"}
             </label>
             <div className="relative">
               <Input
-                type={showKey ? 'text' : 'password'}
+                type={showKey ? "text" : "password"}
                 value={apiKey}
                 onChange={(e) => setApiKey(e.target.value)}
-                placeholder={hasExistingKey ? '••••••••••••••••' : info.placeholder}
+                placeholder={hasExistingKey ? "••••••••••••••••" : info.placeholder}
                 className="pr-10"
-                autoFocus={provider.id !== 'custom'}
+                autoFocus={provider.id !== "custom"}
               />
               <button
                 type="button"
@@ -179,14 +181,14 @@ export function ApiKeyDialog({ open, onOpenChange, provider }: ApiKeyDialogProps
             </p>
           </div>
 
-          {provider.id === 'custom' && (
+          {provider.id === "custom" && (
             <div className="space-y-2">
-              <label className="text-xs text-muted-foreground">Model Name (Optional)</label>
+              <label className="text-xs text-muted-foreground">Model Name (optional)</label>
               <Input
                 type="text"
                 value={modelName}
                 onChange={(e) => setModelName(e.target.value)}
-                placeholder="gpt-4, claude-3-opus, etc."
+                placeholder="e.g., gpt-4"
               />
               <p className="text-xs text-muted-foreground">
                 Environment variable: <code className="text-foreground">CUSTOM_MODEL</code>
@@ -195,42 +197,48 @@ export function ApiKeyDialog({ open, onOpenChange, provider }: ApiKeyDialogProps
           )}
         </div>
 
-        <div className="flex justify-between">
-          {hasExistingKey ? (
+        <div className="flex justify-between gap-2">
+          {hasExistingKey && (
             <Button
-              type="button"
               variant="destructive"
               size="sm"
               onClick={handleDelete}
-              disabled={deleting || saving}
+              disabled={deleting}
             >
               {deleting ? (
-                <Loader2 className="size-4 animate-spin mr-2" />
+                <>
+                  <Loader2 className="size-4 animate-spin" />
+                  Removing...
+                </>
               ) : (
-                <Trash2 className="size-4 mr-2" />
+                <>
+                  <Trash2 className="size-4" />
+                  Remove
+                </>
               )}
-              Remove Key
             </Button>
-          ) : (
-            <div />
           )}
-          <div className="flex gap-2">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+          <div className="flex gap-2 ml-auto">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onOpenChange(false)}
+              disabled={saving}
+            >
               Cancel
             </Button>
             <Button
-              type="button"
+              size="sm"
               onClick={handleSave}
-              disabled={
-                !apiKey.trim() || 
-                saving || 
-                (provider.id === 'custom' && !baseUrl.trim())
-              }
+              disabled={saving || !apiKey.trim()}
             >
               {saving ? (
-                <Loader2 className="size-4 animate-spin" />
+                <>
+                  <Loader2 className="size-4 animate-spin" />
+                  Saving...
+                </>
               ) : (
-                'Save'
+                "Save"
               )}
             </Button>
           </div>

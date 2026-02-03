@@ -31,13 +31,22 @@ Requires Node.js 18+.
 
 ### From Source
 
+```bash
+git clone https://github.com/langchain-ai/openwork.git
+cd openwork
+npm install
+npm run dev
+```
+
+Or configure them in-app via the settings panel.
+
 ## Supported Models
 
-| Provider  | Models                                                            |
-| --------- | ----------------------------------------------------------------- |
+| Provider  | Models                                                                                 |
+| --------- | -------------------------------------------------------------------------------------- |
 | Anthropic | Claude Opus 4.5, Claude Sonnet 4.5, Claude Haiku 4.5, Claude Opus 4.1, Claude Sonnet 4 |
-| OpenAI    | GPT-5.2, GPT-5.1, o3, o3 Mini, o4 Mini, o1, GPT-4.1, GPT-4o       |
-| Google    | Gemini 3 Pro Preview, Gemini 2.5 Pro, Gemini 2.5 Flash, Gemini 2.5 Flash Lite |
+| OpenAI    | GPT-5.2, GPT-5.1, o3, o3 Mini, o4 Mini, o1, GPT-4.1, GPT-4o                            |
+| Google    | Gemini 3 Pro Preview, Gemini 3 Flash Preview, Gemini 2.5 Pro, Gemini 2.5 Flash, Gemini 2.5 Flash Lite |
 | **Custom**    | **Add unlimited custom providers!**                                |
 
 ## ✨ Multiple Custom API Providers
@@ -95,8 +104,6 @@ CUSTOM_BASE_URL=https://api.example.com/v1
 CUSTOM_API_KEY=your-api-key
 CUSTOM_MODEL=your-model-name  # optional
 ```
-
-See [CUSTOM_API.md](CUSTOM_API.md) for detailed instructions.
 
 ## Changelog
 

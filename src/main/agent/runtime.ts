@@ -1,19 +1,19 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { createDeepAgent } from 'deepagents'
-import { getDefaultModel } from '../ipc/models'
-import { getApiKey, getThreadCheckpointPath, getCustomApiConfigs } from '../storage'
-import { ChatAnthropic } from '@langchain/anthropic'
-import { ChatOpenAI } from '@langchain/openai'
-import { ChatGoogleGenerativeAI } from '@langchain/google-genai'
-import { SqlJsSaver } from '../checkpointer/sqljs-saver'
-import { LocalSandbox } from './local-sandbox'
+import { createDeepAgent } from "deepagents"
+import { getDefaultModel } from "../ipc/models"
+import { getApiKey, getThreadCheckpointPath, getCustomApiConfigs } from "../storage"
+import { ChatAnthropic } from "@langchain/anthropic"
+import { ChatOpenAI } from "@langchain/openai"
+import { ChatGoogleGenerativeAI } from "@langchain/google-genai"
+import { SqlJsSaver } from "../checkpointer/sqljs-saver"
+import { LocalSandbox } from "./local-sandbox"
 
-import type * as _lcTypes from 'langchain'
-import type * as _lcMessages from '@langchain/core/messages'
-import type * as _lcLanggraph from '@langchain/langgraph'
-import type * as _lcZodTypes from '@langchain/core/utils/types'
+import type * as _lcTypes from "langchain"
+import type * as _lcMessages from "@langchain/core/messages"
+import type * as _lcLanggraph from "@langchain/langgraph"
+import type * as _lcZodTypes from "@langchain/core/utils/types"
 
-import { BASE_SYSTEM_PROMPT } from './system-prompt'
+import { BASE_SYSTEM_PROMPT } from "./system-prompt"
 
 /**
  * Generate the full system prompt for the agent.
@@ -59,25 +59,27 @@ export async function closeCheckpointer(threadId: string): Promise<void> {
 }
 
 // Get the appropriate model instance based on configuration
-function getModelInstance(modelId?: string): ChatAnthropic | ChatOpenAI | ChatGoogleGenerativeAI | string {
+function getModelInstance(
+  modelId?: string
+): ChatAnthropic | ChatOpenAI | ChatGoogleGenerativeAI | string {
   const model = modelId || getDefaultModel()
-  console.log('[Runtime] Using model:', model)
+  console.log("[Runtime] Using model:", model)
 
   // Check if this model belongs to a custom API config
   // Try to find a custom config that matches this model
   const customConfigs = getCustomApiConfigs()
-  const matchingConfig = customConfigs.find(c => {
+  const matchingConfig = customConfigs.find((c) => {
     // Match by model name or by config ID
     return c.model === model || `custom-${c.id}` === model
   })
-  
+
   if (matchingConfig) {
-    console.log('[Runtime] Found custom API config:', matchingConfig.name)
-    
+    console.log("[Runtime] Found custom API config:", matchingConfig.name)
+
     // Clean the API key - remove any whitespace
     const cleanApiKey = matchingConfig.apiKey?.trim()
-    
-    console.log('[Runtime] Custom API config:', {
+
+    console.log("[Runtime] Custom API config:", {
       id: matchingConfig.id,
       name: matchingConfig.name,
       baseUrl: matchingConfig.baseUrl,
@@ -86,14 +88,14 @@ function getModelInstance(modelId?: string): ChatAnthropic | ChatOpenAI | ChatGo
       cleanApiKeyLength: cleanApiKey?.length,
       apiKeyPrefix: cleanApiKey?.substring(0, 10)
     })
-    
+
     // WORKAROUND: Set OPENAI_API_KEY environment variable for deepagents
     // deepagents may create internal model instances that need this
     if (cleanApiKey) {
       process.env.OPENAI_API_KEY = cleanApiKey
-      console.log('[Runtime] Set OPENAI_API_KEY environment variable for deepagents compatibility')
+      console.log("[Runtime] Set OPENAI_API_KEY environment variable for deepagents compatibility")
     }
-    
+
     // For OpenAI-compatible APIs
     try {
       const chatModel = new ChatOpenAI({
@@ -102,52 +104,52 @@ function getModelInstance(modelId?: string): ChatAnthropic | ChatOpenAI | ChatGo
         configuration: {
           baseURL: matchingConfig.baseUrl,
           defaultHeaders: {
-            'Authorization': `Bearer ${cleanApiKey}`
+            Authorization: `Bearer ${cleanApiKey}`
           }
         },
         timeout: 60000,
         maxRetries: 2
       })
-      
-      console.log('[Runtime] ChatOpenAI instance created for custom API:', matchingConfig.name)
+
+      console.log("[Runtime] ChatOpenAI instance created for custom API:", matchingConfig.name)
       return chatModel
     } catch (error) {
-      console.error('[Runtime] Error creating ChatOpenAI instance:', error)
+      console.error("[Runtime] Error creating ChatOpenAI instance:", error)
       throw error
     }
   }
 
   // Determine provider from model ID
-  if (model.startsWith('claude')) {
-    const apiKey = getApiKey('anthropic')
-    console.log('[Runtime] Anthropic API key present:', !!apiKey)
+  if (model.startsWith("claude")) {
+    const apiKey = getApiKey("anthropic")
+    console.log("[Runtime] Anthropic API key present:", !!apiKey)
     if (!apiKey) {
-      throw new Error('Anthropic API key not configured')
+      throw new Error("Anthropic API key not configured")
     }
     return new ChatAnthropic({
       model,
       anthropicApiKey: apiKey
     })
   } else if (
-    model.startsWith('gpt') ||
-    model.startsWith('o1') ||
-    model.startsWith('o3') ||
-    model.startsWith('o4')
+    model.startsWith("gpt") ||
+    model.startsWith("o1") ||
+    model.startsWith("o3") ||
+    model.startsWith("o4")
   ) {
-    const apiKey = getApiKey('openai')
-    console.log('[Runtime] OpenAI API key present:', !!apiKey)
+    const apiKey = getApiKey("openai")
+    console.log("[Runtime] OpenAI API key present:", !!apiKey)
     if (!apiKey) {
-      throw new Error('OpenAI API key not configured')
+      throw new Error("OpenAI API key not configured")
     }
     return new ChatOpenAI({
       model,
       openAIApiKey: apiKey
     })
-  } else if (model.startsWith('gemini')) {
-    const apiKey = getApiKey('google')
-    console.log('[Runtime] Google API key present:', !!apiKey)
+  } else if (model.startsWith("gemini")) {
+    const apiKey = getApiKey("google")
+    console.log("[Runtime] Google API key present:", !!apiKey)
     if (!apiKey) {
-      throw new Error('Google API key not configured')
+      throw new Error("Google API key not configured")
     }
     return new ChatGoogleGenerativeAI({
       model,
@@ -171,29 +173,28 @@ export interface CreateAgentRuntimeOptions {
 // Create agent runtime with configured model and checkpointer
 export type AgentRuntime = ReturnType<typeof createDeepAgent>
 
-// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 export async function createAgentRuntime(options: CreateAgentRuntimeOptions) {
   const { threadId, modelId, workspacePath } = options
 
   if (!threadId) {
-    throw new Error('Thread ID is required for checkpointing.')
+    throw new Error("Thread ID is required for checkpointing.")
   }
 
   if (!workspacePath) {
     throw new Error(
-      'Workspace path is required. Please select a workspace folder before running the agent.'
+      "Workspace path is required. Please select a workspace folder before running the agent."
     )
   }
 
-  console.log('[Runtime] Creating agent runtime...')
-  console.log('[Runtime] Thread ID:', threadId)
-  console.log('[Runtime] Workspace path:', workspacePath)
+  console.log("[Runtime] Creating agent runtime...")
+  console.log("[Runtime] Thread ID:", threadId)
+  console.log("[Runtime] Workspace path:", workspacePath)
 
   const model = getModelInstance(modelId)
-  console.log('[Runtime] Model instance created:', typeof model)
+  console.log("[Runtime] Model instance created:", typeof model)
 
   const checkpointer = await getCheckpointer(threadId)
-  console.log('[Runtime] Checkpointer ready for thread:', threadId)
+  console.log("[Runtime] Checkpointer ready for thread:", threadId)
 
   const backend = new LocalSandbox({
     rootDir: workspacePath,
@@ -227,7 +228,7 @@ The workspace root is: ${workspacePath}`
     interruptOn: { execute: true }
   } as Parameters<typeof createDeepAgent>[0])
 
-  console.log('[Runtime] Deep agent created with LocalSandbox at:', workspacePath)
+  console.log("[Runtime] Deep agent created with LocalSandbox at:", workspacePath)
   return agent
 }
 

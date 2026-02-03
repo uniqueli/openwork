@@ -1,16 +1,17 @@
-import { useState, useRef, useEffect, useMemo, useCallback } from 'react'
-import { Send, Square, Loader2, AlertCircle, X } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { useAppStore } from '@/lib/store'
-import { useCurrentThread, useThreadStream } from '@/lib/thread-context'
-import { MessageBubble } from './MessageBubble'
-import { ModelSwitcher } from './ModelSwitcher'
-import { Folder } from 'lucide-react'
-import { WorkspacePicker, selectWorkspaceFolder } from './WorkspacePicker'
-import { ChatTodos } from './ChatTodos'
-import { ContextUsageIndicator } from './ContextUsageIndicator'
-import type { Message } from '@/types'
+import { useRef, useEffect, useMemo, useCallback } from "react"
+import { Send, Square, Loader2, AlertCircle, X } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { useAppStore } from "@/lib/store"
+import { useCurrentThread, useThreadStream } from "@/lib/thread-context"
+import { MessageBubble } from "./MessageBubble"
+import { ModelSwitcher } from "./ModelSwitcher"
+import { Folder } from "lucide-react"
+import { WorkspacePicker } from "./WorkspacePicker"
+import { selectWorkspaceFolder } from "@/lib/workspace-utils"
+import { ChatTodos } from "./ChatTodos"
+import { ContextUsageIndicator } from "./ContextUsageIndicator"
+import type { Message } from "@/types"
 
 interface AgentStreamValues {
   todos?: Array<{ id?: string; content?: string; status?: string }>
@@ -20,7 +21,7 @@ interface StreamMessage {
   id?: string
   type?: string
   content?: string | unknown[]
-  tool_calls?: Message['tool_calls']
+  tool_calls?: Message["tool_calls"]
   tool_call_id?: string
   name?: string
 }
@@ -30,12 +31,11 @@ interface ChatContainerProps {
 }
 
 export function ChatContainer({ threadId }: ChatContainerProps): React.JSX.Element {
-  const [input, setInput] = useState('')
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const isAtBottomRef = useRef(true)
 
-  const { loadThreads, generateTitleForFirstMessage } = useAppStore()
+  const { threads, loadThreads, generateTitleForFirstMessage } = useAppStore()
 
   // Get persisted thread state and actions from context
   const {
@@ -46,13 +46,15 @@ export function ChatContainer({ threadId }: ChatContainerProps): React.JSX.Eleme
     workspacePath,
     tokenUsage,
     currentModel,
+    draftInput: input,
     setTodos,
     setWorkspaceFiles,
     setWorkspacePath,
     setPendingApproval,
     appendMessage,
     setError,
-    clearError
+    clearError,
+    setDraftInput: setInput
   } = useCurrentThread(threadId)
 
   // Get the stream data via subscription - reactive updates without re-rendering provider
@@ -61,18 +63,21 @@ export function ChatContainer({ threadId }: ChatContainerProps): React.JSX.Eleme
   const isLoading = streamData.isLoading
 
   const handleApprovalDecision = useCallback(
-    async (decision: 'approve' | 'reject' | 'edit') => {
+    async (decision: "approve" | "reject" | "edit"): Promise<void> => {
       if (!pendingApproval || !stream) return
 
       setPendingApproval(null)
 
       try {
-        await stream.submit(null, { command: { resume: { decision } } })
+        await stream.submit(null, {
+          command: { resume: { decision } },
+          config: { configurable: { thread_id: threadId, model_id: currentModel } }
+        })
       } catch (err) {
-        console.error('[ChatContainer] Resume command failed:', err)
+        console.error("[ChatContainer] Resume command failed:", err)
       }
     },
-    [pendingApproval, setPendingApproval, stream]
+    [pendingApproval, setPendingApproval, stream, threadId, currentModel]
   )
 
   const agentValues = stream?.values as AgentStreamValues | undefined
@@ -82,8 +87,8 @@ export function ChatContainer({ threadId }: ChatContainerProps): React.JSX.Eleme
       setTodos(
         streamTodos.map((t) => ({
           id: t.id || crypto.randomUUID(),
-          content: t.content || '',
-          status: (t.status || 'pending') as 'pending' | 'in_progress' | 'completed' | 'cancelled'
+          content: t.content || "",
+          status: (t.status || "pending") as "pending" | "in_progress" | "completed" | "cancelled"
         }))
       )
     }
@@ -97,18 +102,19 @@ export function ChatContainer({ threadId }: ChatContainerProps): React.JSX.Eleme
         if (msg.id) {
           const streamMsg = msg as StreamMessage & { id: string }
 
-          let role: Message['role'] = 'assistant'
-          if (streamMsg.type === 'human') role = 'user'
-          else if (streamMsg.type === 'tool') role = 'tool'
-          else if (streamMsg.type === 'ai') role = 'assistant'
+          let role: Message["role"] = "assistant"
+          if (streamMsg.type === "human") role = "user"
+          else if (streamMsg.type === "tool") role = "tool"
+          else if (streamMsg.type === "ai") role = "assistant"
 
           const storeMsg: Message = {
             id: streamMsg.id,
             role,
-            content: typeof streamMsg.content === 'string' ? streamMsg.content : '',
+            content: typeof streamMsg.content === "string" ? streamMsg.content : "",
             tool_calls: streamMsg.tool_calls,
-            ...(role === 'tool' && streamMsg.tool_call_id && { tool_call_id: streamMsg.tool_call_id }),
-            ...(role === 'tool' && streamMsg.name && { name: streamMsg.name }),
+            ...(role === "tool" &&
+              streamMsg.tool_call_id && { tool_call_id: streamMsg.tool_call_id }),
+            ...(role === "tool" && streamMsg.name && { name: streamMsg.name }),
             created_at: new Date()
           }
           appendMessage(storeMsg)
@@ -125,19 +131,19 @@ export function ChatContainer({ threadId }: ChatContainerProps): React.JSX.Eleme
     const streamingMsgs: Message[] = ((streamData.messages || []) as StreamMessage[])
       .filter((m): m is StreamMessage & { id: string } => !!m.id && !threadMessageIds.has(m.id))
       .map((streamMsg) => {
-
-        let role: Message['role'] = 'assistant'
-        if (streamMsg.type === 'human') role = 'user'
-        else if (streamMsg.type === 'tool') role = 'tool'
-        else if (streamMsg.type === 'ai') role = 'assistant'
+        let role: Message["role"] = "assistant"
+        if (streamMsg.type === "human") role = "user"
+        else if (streamMsg.type === "tool") role = "tool"
+        else if (streamMsg.type === "ai") role = "assistant"
 
         return {
           id: streamMsg.id,
           role,
-          content: typeof streamMsg.content === 'string' ? streamMsg.content : '',
+          content: typeof streamMsg.content === "string" ? streamMsg.content : "",
           tool_calls: streamMsg.tool_calls,
-          ...(role === 'tool' && streamMsg.tool_call_id && { tool_call_id: streamMsg.tool_call_id }),
-          ...(role === 'tool' && streamMsg.name && { name: streamMsg.name }),
+          ...(role === "tool" &&
+            streamMsg.tool_call_id && { tool_call_id: streamMsg.tool_call_id }),
+          ...(role === "tool" && streamMsg.name && { name: streamMsg.name }),
           created_at: new Date()
         }
       })
@@ -149,7 +155,7 @@ export function ChatContainer({ threadId }: ChatContainerProps): React.JSX.Eleme
   const toolResults = useMemo(() => {
     const results = new Map<string, { content: string | unknown; is_error?: boolean }>()
     for (const msg of displayMessages) {
-      if (msg.role === 'tool' && msg.tool_call_id) {
+      if (msg.role === "tool" && msg.tool_call_id) {
         results.set(msg.tool_call_id, {
           content: msg.content,
           is_error: false // Could be enhanced to track errors
@@ -160,14 +166,14 @@ export function ChatContainer({ threadId }: ChatContainerProps): React.JSX.Eleme
   }, [displayMessages])
 
   // Get the actual scrollable viewport element from Radix ScrollArea
-  const getViewport = useCallback(() => {
+  const getViewport = useCallback((): HTMLDivElement | null => {
     return scrollRef.current?.querySelector(
-      '[data-radix-scroll-area-viewport]'
+      "[data-radix-scroll-area-viewport]"
     ) as HTMLDivElement | null
   }, [])
 
   // Track scroll position to determine if user is at bottom
-  const handleScroll = useCallback(() => {
+  const handleScroll = useCallback((): void => {
     const viewport = getViewport()
     if (!viewport) return
 
@@ -182,8 +188,8 @@ export function ChatContainer({ threadId }: ChatContainerProps): React.JSX.Eleme
     const viewport = getViewport()
     if (!viewport) return
 
-    viewport.addEventListener('scroll', handleScroll)
-    return () => viewport.removeEventListener('scroll', handleScroll)
+    viewport.addEventListener("scroll", handleScroll)
+    return () => viewport.removeEventListener("scroll", handleScroll)
   }, [getViewport, handleScroll])
 
   // Auto-scroll on new messages only if already at bottom
@@ -217,7 +223,7 @@ export function ChatContainer({ threadId }: ChatContainerProps): React.JSX.Eleme
     if (!input.trim() || isLoading || !stream) return
 
     if (!workspacePath) {
-      setError('Please select a workspace folder before sending messages.')
+      setError("Please select a workspace folder before sending messages.")
       return
     }
 
@@ -230,36 +236,40 @@ export function ChatContainer({ threadId }: ChatContainerProps): React.JSX.Eleme
     }
 
     const message = input.trim()
-    setInput('')
+    setInput("")
 
     const isFirstMessage = threadMessages.length === 0
 
     const userMessage: Message = {
       id: crypto.randomUUID(),
-      role: 'user',
+      role: "user",
       content: message,
       created_at: new Date()
     }
     appendMessage(userMessage)
 
     if (isFirstMessage) {
-      generateTitleForFirstMessage(threadId, message)
+      const currentThread = threads.find((t) => t.thread_id === threadId)
+      const hasDefaultTitle = currentThread?.title?.startsWith("Thread ")
+      if (hasDefaultTitle) {
+        generateTitleForFirstMessage(threadId, message)
+      }
     }
 
     await stream.submit(
       {
-        messages: [{ type: 'human', content: message }]
+        messages: [{ type: "human", content: message }]
       },
       {
         config: {
-          configurable: { thread_id: threadId }
+          configurable: { thread_id: threadId, model_id: currentModel }
         }
       }
     )
   }
 
   const handleKeyDown = (e: React.KeyboardEvent): void => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault()
       handleSubmit(e)
     }
@@ -269,7 +279,7 @@ export function ChatContainer({ threadId }: ChatContainerProps): React.JSX.Eleme
   const adjustTextareaHeight = (): void => {
     const textarea = inputRef.current
     if (textarea) {
-      textarea.style.height = 'auto'
+      textarea.style.height = "auto"
       textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`
     }
   }
@@ -319,9 +329,9 @@ export function ChatContainer({ threadId }: ChatContainerProps): React.JSX.Eleme
             )}
 
             {displayMessages.map((message) => (
-              <MessageBubble 
-                key={message.id} 
-                message={message} 
+              <MessageBubble
+                key={message.id}
+                message={message}
                 toolResults={toolResults}
                 pendingApproval={pendingApproval}
                 onApprovalDecision={handleApprovalDecision}
@@ -379,7 +389,7 @@ export function ChatContainer({ threadId }: ChatContainerProps): React.JSX.Eleme
                 disabled={isLoading}
                 className="flex-1 min-w-0 resize-none rounded-sm border border-border bg-background px-4 py-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-50"
                 rows={1}
-                style={{ minHeight: '48px', maxHeight: '200px' }}
+                style={{ minHeight: "48px", maxHeight: "200px" }}
               />
               <div className="flex items-center justify-center shrink-0 h-12">
                 {isLoading ? (
@@ -387,7 +397,13 @@ export function ChatContainer({ threadId }: ChatContainerProps): React.JSX.Eleme
                     <Square className="size-4" />
                   </Button>
                 ) : (
-                  <Button type="submit" variant="default" size="icon" disabled={!input.trim()} className="rounded-md">
+                  <Button
+                    type="submit"
+                    variant="default"
+                    size="icon"
+                    disabled={!input.trim()}
+                    className="rounded-md"
+                  >
                     <Send className="size-4" />
                   </Button>
                 )}
@@ -406,7 +422,6 @@ export function ChatContainer({ threadId }: ChatContainerProps): React.JSX.Eleme
           </div>
         </form>
       </div>
-
     </div>
   )
 }
