@@ -1,5 +1,12 @@
 import { contextBridge, ipcRenderer } from "electron"
-import type { Thread, ModelConfig, Provider, StreamEvent, HITLDecision, CustomApiConfig } from "../main/types"
+import type {
+  Thread,
+  ModelConfig,
+  Provider,
+  StreamEvent,
+  HITLDecision,
+  CustomApiConfig
+} from "../main/types"
 
 // Simple electron API - replaces @electron-toolkit/preload
 const electronAPI = {

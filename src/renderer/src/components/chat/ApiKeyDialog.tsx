@@ -199,12 +199,7 @@ export function ApiKeyDialog({
 
         <div className="flex justify-between gap-2">
           {hasExistingKey && (
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={handleDelete}
-              disabled={deleting}
-            >
+            <Button variant="destructive" size="sm" onClick={handleDelete} disabled={deleting}>
               {deleting ? (
                 <>
                   <Loader2 className="size-4 animate-spin" />
@@ -227,11 +222,7 @@ export function ApiKeyDialog({
             >
               Cancel
             </Button>
-            <Button
-              size="sm"
-              onClick={handleSave}
-              disabled={saving || !apiKey.trim()}
-            >
+            <Button size="sm" onClick={handleSave} disabled={saving || !apiKey.trim()}>
               {saving ? (
                 <>
                   <Loader2 className="size-4 animate-spin" />

@@ -52,9 +52,23 @@ interface CustomAPI {
     setDefault: (modelId: string) => Promise<void>
     setApiKey: (provider: string, apiKey: string) => Promise<void>
     getApiKey: (provider: string) => Promise<string | null>
-    getCustomApiConfig: (id?: string) => Promise<{ id: string; name: string; baseUrl: string; apiKey: string; model?: string } | null>
-    getCustomApiConfigs: () => Promise<Array<{ id: string; name: string; baseUrl: string; apiKey: string; model?: string }>>
-    setCustomApiConfig: (config: { id: string; name: string; baseUrl: string; apiKey: string; model?: string }) => Promise<void>
+    getCustomApiConfig: (id?: string) => Promise<{
+      id: string
+      name: string
+      baseUrl: string
+      apiKey: string
+      model?: string
+    } | null>
+    getCustomApiConfigs: () => Promise<
+      Array<{ id: string; name: string; baseUrl: string; apiKey: string; model?: string }>
+    >
+    setCustomApiConfig: (config: {
+      id: string
+      name: string
+      baseUrl: string
+      apiKey: string
+      model?: string
+    }) => Promise<void>
     deleteCustomApiConfig: (id?: string) => Promise<void>
   }
   workspace: {

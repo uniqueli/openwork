@@ -1,7 +1,6 @@
 import { homedir } from "os"
 import { join } from "path"
 import { existsSync, mkdirSync, readFileSync, writeFileSync, unlinkSync } from "fs"
-import type { ProviderId } from "./types"
 
 const OPENWORK_DIR = join(homedir(), ".openwork")
 const ENV_FILE = join(OPENWORK_DIR, ".env")
@@ -11,7 +10,7 @@ const ENV_VAR_NAMES: Record<string, string> = {
   anthropic: "ANTHROPIC_API_KEY",
   openai: "OPENAI_API_KEY",
   google: "GOOGLE_API_KEY",
-  ollama: "", // Ollama doesn't require an API key
+  ollama: "" // Ollama doesn't require an API key
   // Custom providers have their own env var pattern
 }
 
