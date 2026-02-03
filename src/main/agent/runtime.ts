@@ -107,6 +107,7 @@ function getModelInstance(
             Authorization: `Bearer ${cleanApiKey}`
           }
         },
+        temperature: 0.3,
         timeout: 60000,
         maxRetries: 2
       })
@@ -128,7 +129,8 @@ function getModelInstance(
     }
     return new ChatAnthropic({
       model,
-      anthropicApiKey: apiKey
+      anthropicApiKey: apiKey,
+      temperature: 0.3
     })
   } else if (
     model.startsWith("gpt") ||
@@ -143,7 +145,8 @@ function getModelInstance(
     }
     return new ChatOpenAI({
       model,
-      openAIApiKey: apiKey
+      openAIApiKey: apiKey,
+      temperature: 0.3
     })
   } else if (model.startsWith("gemini")) {
     const apiKey = getApiKey("google")
@@ -153,7 +156,8 @@ function getModelInstance(
     }
     return new ChatGoogleGenerativeAI({
       model,
-      apiKey: apiKey
+      apiKey: apiKey,
+      temperature: 0.3
     })
   }
 
