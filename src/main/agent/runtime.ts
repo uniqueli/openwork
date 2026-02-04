@@ -1,12 +1,13 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { createDeepAgent } from "deepagents"
 import { getDefaultModel } from "../ipc/models"
-import { getApiKey, getThreadCheckpointPath, getCustomApiConfigs } from "../storage"
+import { getApiKey, getThreadCheckpointPath, getCustomApiConfigs, getEnabledSkillIds } from "../storage"
 import { ChatAnthropic } from "@langchain/anthropic"
 import { ChatOpenAI } from "@langchain/openai"
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai"
 import { SqlJsSaver } from "../checkpointer/sqljs-saver"
 import { LocalSandbox } from "./local-sandbox"
+import { initializeBuiltinSkills, getSkillsFileDir } from "./skills/skill-file-manager"
 
 import type * as _lcTypes from "langchain"
 import type * as _lcMessages from "@langchain/core/messages"
@@ -14,6 +15,19 @@ import type * as _lcLanggraph from "@langchain/langgraph"
 import type * as _lcZodTypes from "@langchain/core/utils/types"
 
 import { BASE_SYSTEM_PROMPT } from "./system-prompt"
+
+// Flag to track if skills have been initialized
+let skillsInitialized = false
+
+/**
+ * Lazily initialize built-in skills (called on first agent creation)
+ */
+function ensureSkillsInitialized(): void {
+  if (!skillsInitialized) {
+    initializeBuiltinSkills()
+    skillsInitialized = true
+  }
+}
 
 /**
  * Generate the full system prompt for the agent.
@@ -172,13 +186,15 @@ export interface CreateAgentRuntimeOptions {
   modelId?: string
   /** Workspace path - REQUIRED for agent to operate on files */
   workspacePath: string
+  /** Whether to enable skills (defaults to checking if any skills are enabled) */
+  enableSkills?: boolean
 }
 
 // Create agent runtime with configured model and checkpointer
 export type AgentRuntime = ReturnType<typeof createDeepAgent>
 
 export async function createAgentRuntime(options: CreateAgentRuntimeOptions) {
-  const { threadId, modelId, workspacePath } = options
+  const { threadId, modelId, workspacePath, enableSkills } = options
 
   if (!threadId) {
     throw new Error("Thread ID is required for checkpointing.")
@@ -189,6 +205,9 @@ export async function createAgentRuntime(options: CreateAgentRuntimeOptions) {
       "Workspace path is required. Please select a workspace folder before running the agent."
     )
   }
+
+  // Lazily initialize skills on first agent creation
+  ensureSkillsInitialized()
 
   console.log("[Runtime] Creating agent runtime...")
   console.log("[Runtime] Thread ID:", threadId)
@@ -209,28 +228,30 @@ export async function createAgentRuntime(options: CreateAgentRuntimeOptions) {
 
   const systemPrompt = getSystemPrompt(workspacePath)
 
-  // Custom filesystem prompt for absolute paths (matches virtualMode: false)
-  const filesystemSystemPrompt = `You have access to a filesystem. All file paths use fully qualified absolute system paths.
+  // Check if skills should be enabled
+  const enabledSkillIds = getEnabledSkillIds()
+  const hasEnabledSkills = enabledSkillIds.length > 0
+  const shouldEnableSkills = enableSkills !== undefined ? enableSkills : hasEnabledSkills
 
-- ls: list files in a directory (e.g., ls("${workspacePath}"))
-- read_file: read a file from the filesystem
-- write_file: write to a file in the filesystem
-- edit_file: edit a file in the filesystem
-- glob: find files matching a pattern (e.g., "**/*.py")
-- grep: search for text within files
-
-The workspace root is: ${workspacePath}`
-
-  const agent = createDeepAgent({
+  // Build agent parameters
+  const agentParams: Parameters<typeof createDeepAgent>[0] = {
     model,
     checkpointer,
     backend,
     systemPrompt,
-    // Custom filesystem prompt for absolute paths (requires deepagents update)
-    filesystemSystemPrompt,
     // Require human approval for all shell commands
     interruptOn: { execute: true }
-  } as Parameters<typeof createDeepAgent>[0])
+  }
+
+  // Add skills if enabled
+  if (shouldEnableSkills && hasEnabledSkills) {
+    const skillsDir = getSkillsFileDir()
+    agentParams.skills = [skillsDir]
+    console.log("[Runtime] Skills enabled from:", skillsDir)
+    console.log("[Runtime] Enabled skills:", enabledSkillIds.join(", "))
+  }
+
+  const agent = createDeepAgent(agentParams!)
 
   console.log("[Runtime] Deep agent created with LocalSandbox at:", workspacePath)
   return agent

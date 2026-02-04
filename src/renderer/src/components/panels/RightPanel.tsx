@@ -21,13 +21,15 @@ import {
   FileCode,
   FileJson,
   Image,
-  FileType
+  FileType,
+  Sparkles
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useAppStore } from "@/lib/store"
 import { useThreadState } from "@/lib/thread-context"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { SkillsPanel } from "@/components/skills/skills-panel"
 import type { Todo } from "@/types"
 
 const HEADER_HEIGHT = 40 // px
@@ -126,14 +128,16 @@ export function RightPanel(): React.JSX.Element {
   const [tasksOpen, setTasksOpen] = useState(true)
   const [filesOpen, setFilesOpen] = useState(true)
   const [agentsOpen, setAgentsOpen] = useState(true)
+  const [skillsOpen, setSkillsOpen] = useState(false)
 
   // Store content heights in pixels (null = auto/equal distribution)
   const [tasksHeight, setTasksHeight] = useState<number | null>(null)
   const [filesHeight, setFilesHeight] = useState<number | null>(null)
   const [agentsHeight, setAgentsHeight] = useState<number | null>(null)
+  const [skillsHeight, setSkillsHeight] = useState<number | null>(null)
 
   // Track drag start heights
-  const dragStartHeights = useRef<{ tasks: number; files: number; agents: number } | null>(null)
+  const dragStartHeights = useRef<{ tasks: number; files: number; agents: number; skills: number } | null>(null)
 
   // Calculate available content height
   const getAvailableContentHeight = useCallback(() => {
@@ -141,22 +145,22 @@ export function RightPanel(): React.JSX.Element {
     const totalHeight = containerRef.current.clientHeight
 
     // Subtract headers (always visible)
-    let used = HEADER_HEIGHT * 3
+    let used = HEADER_HEIGHT * 4
 
     // Subtract handles (only between open panels)
-    if (tasksOpen && (filesOpen || agentsOpen)) used += HANDLE_HEIGHT
-    if (filesOpen && agentsOpen) used += HANDLE_HEIGHT
+    const openPanels = [tasksOpen, filesOpen, agentsOpen, skillsOpen].filter(Boolean).length
+    used += HANDLE_HEIGHT * (openPanels - 1)
 
     return Math.max(0, totalHeight - used)
-  }, [tasksOpen, filesOpen, agentsOpen])
+  }, [tasksOpen, filesOpen, agentsOpen, skillsOpen])
 
   // Get current heights for each panel's content area
   const getContentHeights = useCallback(() => {
     const available = getAvailableContentHeight()
-    const openCount = [tasksOpen, filesOpen, agentsOpen].filter(Boolean).length
+    const openCount = [tasksOpen, filesOpen, agentsOpen, skillsOpen].filter(Boolean).length
 
     if (openCount === 0) {
-      return { tasks: 0, files: 0, agents: 0 }
+      return { tasks: 0, files: 0, agents: 0, skills: 0 }
     }
 
     const defaultHeight = available / openCount
@@ -164,16 +168,19 @@ export function RightPanel(): React.JSX.Element {
     return {
       tasks: tasksOpen ? (tasksHeight ?? defaultHeight) : 0,
       files: filesOpen ? (filesHeight ?? defaultHeight) : 0,
-      agents: agentsOpen ? (agentsHeight ?? defaultHeight) : 0
+      agents: agentsOpen ? (agentsHeight ?? defaultHeight) : 0,
+      skills: skillsOpen ? (skillsHeight ?? defaultHeight) : 0
     }
   }, [
     getAvailableContentHeight,
     tasksOpen,
     filesOpen,
     agentsOpen,
+    skillsOpen,
     tasksHeight,
     filesHeight,
-    agentsHeight
+    agentsHeight,
+    skillsHeight
   ])
 
   // Handle resize between tasks and the next open section
@@ -187,8 +194,15 @@ export function RightPanel(): React.JSX.Element {
       const start = dragStartHeights.current
       const available = getAvailableContentHeight()
 
-      // Determine which panel is being resized against
-      const otherStart = filesOpen ? start.files : start.agents
+      // Find the next open panel after tasks
+      let nextPanel: "files" | "agents" | "skills" | null = null
+      if (filesOpen) nextPanel = "files"
+      else if (agentsOpen) nextPanel = "agents"
+      else if (skillsOpen) nextPanel = "skills"
+
+      if (!nextPanel) return
+
+      const otherStart = start[nextPanel]
 
       // Calculate new heights with proper clamping
       let newTasksHeight = start.tasks + totalDelta
@@ -204,9 +218,16 @@ export function RightPanel(): React.JSX.Element {
         newTasksHeight = start.tasks + (otherStart - MIN_CONTENT_HEIGHT)
       }
 
-      // Ensure total doesn't exceed available (accounting for third panel if open)
-      const thirdPanelHeight = filesOpen && agentsOpen ? (agentsHeight ?? available / 3) : 0
-      const maxForTwo = available - thirdPanelHeight
+      // Get the height of panels below the one we're resizing against
+      const belowHeight =
+        (nextPanel === "files" && (agentsOpen || skillsOpen)
+          ? (agentsOpen ? (agentsHeight ?? available / 4) : 0) +
+            (skillsOpen ? (skillsHeight ?? available / 4) : 0)
+          : nextPanel === "agents" && skillsOpen
+            ? (skillsHeight ?? available / 4)
+            : 0)
+
+      const maxForTwo = available - belowHeight
       if (newTasksHeight + newOtherHeight > maxForTwo) {
         const excess = newTasksHeight + newOtherHeight - maxForTwo
         if (totalDelta > 0) {
@@ -217,25 +238,24 @@ export function RightPanel(): React.JSX.Element {
       }
 
       setTasksHeight(newTasksHeight)
-      if (filesOpen) {
-        setFilesHeight(newOtherHeight)
-      } else if (agentsOpen) {
-        setAgentsHeight(newOtherHeight)
-      }
+      if (nextPanel === "files") setFilesHeight(newOtherHeight)
+      else if (nextPanel === "agents") setAgentsHeight(newOtherHeight)
+      else if (nextPanel === "skills") setSkillsHeight(newOtherHeight)
 
       // Auto-collapse if below threshold
       if (newTasksHeight < COLLAPSE_THRESHOLD) {
         setTasksOpen(false)
       }
       if (newOtherHeight < COLLAPSE_THRESHOLD) {
-        if (filesOpen) setFilesOpen(false)
-        else if (agentsOpen) setAgentsOpen(false)
+        if (nextPanel === "files") setFilesOpen(false)
+        else if (nextPanel === "agents") setAgentsOpen(false)
+        else if (nextPanel === "skills") setSkillsOpen(false)
       }
     },
-    [getContentHeights, getAvailableContentHeight, filesOpen, agentsOpen, agentsHeight]
+    [getContentHeights, getAvailableContentHeight, filesOpen, agentsOpen, skillsOpen, agentsHeight, skillsHeight]
   )
 
-  // Handle resize between files and agents
+  // Handle resize between files and agents/skills
   const handleFilesResize = useCallback(
     (totalDelta: number) => {
       if (!dragStartHeights.current) {
@@ -245,45 +265,111 @@ export function RightPanel(): React.JSX.Element {
 
       const start = dragStartHeights.current
       const available = getAvailableContentHeight()
-      const tasksH = tasksOpen ? (tasksHeight ?? available / 3) : 0
-      const maxForFilesAndAgents = available - tasksH
+      const tasksH = tasksOpen ? (tasksHeight ?? available / 4) : 0
+
+      // Find the next open panel after files
+      let nextPanel: "agents" | "skills" | null = null
+      if (agentsOpen) nextPanel = "agents"
+      else if (skillsOpen) nextPanel = "skills"
+
+      if (!nextPanel) return
+
+      const maxForFilesAndNext = available - tasksH
 
       // Calculate new heights with proper clamping
       let newFilesHeight = start.files + totalDelta
-      let newAgentsHeight = start.agents - totalDelta
+      let newNextHeight = start[nextPanel] - totalDelta
 
       // Clamp both to min height
       if (newFilesHeight < MIN_CONTENT_HEIGHT) {
         newFilesHeight = MIN_CONTENT_HEIGHT
-        newAgentsHeight = start.agents + (start.files - MIN_CONTENT_HEIGHT)
+        newNextHeight = start[nextPanel] + (start.files - MIN_CONTENT_HEIGHT)
       }
-      if (newAgentsHeight < MIN_CONTENT_HEIGHT) {
-        newAgentsHeight = MIN_CONTENT_HEIGHT
-        newFilesHeight = start.files + (start.agents - MIN_CONTENT_HEIGHT)
+      if (newNextHeight < MIN_CONTENT_HEIGHT) {
+        newNextHeight = MIN_CONTENT_HEIGHT
+        newFilesHeight = start.files + (start[nextPanel] - MIN_CONTENT_HEIGHT)
       }
 
       // Ensure total doesn't exceed available
-      if (newFilesHeight + newAgentsHeight > maxForFilesAndAgents) {
-        const excess = newFilesHeight + newAgentsHeight - maxForFilesAndAgents
+      if (newFilesHeight + newNextHeight > maxForFilesAndNext) {
+        const excess = newFilesHeight + newNextHeight - maxForFilesAndNext
         if (totalDelta > 0) {
-          newAgentsHeight = Math.max(MIN_CONTENT_HEIGHT, newAgentsHeight - excess)
+          newNextHeight = Math.max(MIN_CONTENT_HEIGHT, newNextHeight - excess)
         } else {
           newFilesHeight = Math.max(MIN_CONTENT_HEIGHT, newFilesHeight - excess)
         }
       }
 
       setFilesHeight(newFilesHeight)
-      setAgentsHeight(newAgentsHeight)
+      if (nextPanel === "agents") setAgentsHeight(newNextHeight)
+      else if (nextPanel === "skills") setSkillsHeight(newNextHeight)
 
       // Auto-collapse if below threshold
       if (newFilesHeight < COLLAPSE_THRESHOLD) {
         setFilesOpen(false)
       }
+      if (newNextHeight < COLLAPSE_THRESHOLD) {
+        if (nextPanel === "agents") setAgentsOpen(false)
+        else if (nextPanel === "skills") setSkillsOpen(false)
+      }
+    },
+    [getContentHeights, getAvailableContentHeight, tasksOpen, tasksHeight, agentsOpen, skillsOpen]
+  )
+
+  // Handle resize between agents and skills
+  const handleAgentsResize = useCallback(
+    (totalDelta: number) => {
+      if (!dragStartHeights.current) {
+        const heights = getContentHeights()
+        dragStartHeights.current = { ...heights }
+      }
+
+      const start = dragStartHeights.current
+      const available = getAvailableContentHeight()
+
+      // Calculate heights of panels above
+      const tasksH = tasksOpen ? (tasksHeight ?? available / 4) : 0
+      const filesH = filesOpen ? (filesHeight ?? available / 4) : 0
+      const aboveHeight = tasksH + filesH
+
+      const maxForAgentsAndSkills = available - aboveHeight
+
+      // Calculate new heights with proper clamping
+      let newAgentsHeight = start.agents + totalDelta
+      let newSkillsHeight = start.skills - totalDelta
+
+      // Clamp both to min height
+      if (newAgentsHeight < MIN_CONTENT_HEIGHT) {
+        newAgentsHeight = MIN_CONTENT_HEIGHT
+        newSkillsHeight = start.skills + (start.agents - MIN_CONTENT_HEIGHT)
+      }
+      if (newSkillsHeight < MIN_CONTENT_HEIGHT) {
+        newSkillsHeight = MIN_CONTENT_HEIGHT
+        newAgentsHeight = start.agents + (start.skills - MIN_CONTENT_HEIGHT)
+      }
+
+      // Ensure total doesn't exceed available
+      if (newAgentsHeight + newSkillsHeight > maxForAgentsAndSkills) {
+        const excess = newAgentsHeight + newSkillsHeight - maxForAgentsAndSkills
+        if (totalDelta > 0) {
+          newSkillsHeight = Math.max(MIN_CONTENT_HEIGHT, newSkillsHeight - excess)
+        } else {
+          newAgentsHeight = Math.max(MIN_CONTENT_HEIGHT, newAgentsHeight - excess)
+        }
+      }
+
+      setAgentsHeight(newAgentsHeight)
+      setSkillsHeight(newSkillsHeight)
+
+      // Auto-collapse if below threshold
       if (newAgentsHeight < COLLAPSE_THRESHOLD) {
         setAgentsOpen(false)
       }
+      if (newSkillsHeight < COLLAPSE_THRESHOLD) {
+        setSkillsOpen(false)
+      }
     },
-    [getContentHeights, getAvailableContentHeight, tasksOpen, tasksHeight]
+    [getContentHeights, getAvailableContentHeight, tasksOpen, filesOpen, tasksHeight, filesHeight]
   )
 
   // Reset drag start on mouse up
@@ -300,10 +386,11 @@ export function RightPanel(): React.JSX.Element {
     setTasksHeight(null)
     setFilesHeight(null)
     setAgentsHeight(null)
-  }, [tasksOpen, filesOpen, agentsOpen])
+    setSkillsHeight(null)
+  }, [tasksOpen, filesOpen, agentsOpen, skillsOpen])
 
   // Calculate heights in an effect (refs can't be accessed during render)
-  const [heights, setHeights] = useState({ tasks: 0, files: 0, agents: 0 })
+  const [heights, setHeights] = useState({ tasks: 0, files: 0, agents: 0, skills: 0 })
   useEffect(() => {
     setHeights(getContentHeights())
   }, [getContentHeights])
@@ -330,7 +417,7 @@ export function RightPanel(): React.JSX.Element {
       </div>
 
       {/* Resize handle after TASKS */}
-      {tasksOpen && (filesOpen || agentsOpen) && <ResizeHandle onDrag={handleTasksResize} />}
+      {tasksOpen && (filesOpen || agentsOpen || skillsOpen) && <ResizeHandle onDrag={handleTasksResize} />}
 
       {/* FILES */}
       <div className="flex flex-col shrink-0 border-b border-border">
@@ -349,10 +436,10 @@ export function RightPanel(): React.JSX.Element {
       </div>
 
       {/* Resize handle after FILES */}
-      {filesOpen && agentsOpen && <ResizeHandle onDrag={handleFilesResize} />}
+      {filesOpen && (agentsOpen || skillsOpen) && <ResizeHandle onDrag={handleFilesResize} />}
 
       {/* AGENTS */}
-      <div className="flex flex-col shrink-0">
+      <div className="flex flex-col shrink-0 border-b border-border">
         <SectionHeader
           title="AGENTS"
           icon={GitBranch}
@@ -363,6 +450,24 @@ export function RightPanel(): React.JSX.Element {
         {agentsOpen && (
           <div className="overflow-auto" style={{ height: heights.agents }}>
             <AgentsContent />
+          </div>
+        )}
+      </div>
+
+      {/* Resize handle after AGENTS */}
+      {agentsOpen && skillsOpen && <ResizeHandle onDrag={handleAgentsResize} />}
+
+      {/* SKILLS */}
+      <div className="flex flex-col shrink-0">
+        <SectionHeader
+          title="SKILLS"
+          icon={Sparkles}
+          isOpen={skillsOpen}
+          onToggle={() => setSkillsOpen((prev) => !prev)}
+        />
+        {skillsOpen && (
+          <div className="overflow-auto" style={{ height: heights.skills }}>
+            <SkillsContent />
           </div>
         )}
       </div>
@@ -973,6 +1078,10 @@ function AgentsContent(): React.JSX.Element {
       ))}
     </div>
   )
+}
+
+function SkillsContent(): React.JSX.Element {
+  return <SkillsPanel />
 }
 
 function formatSize(bytes: number): string {

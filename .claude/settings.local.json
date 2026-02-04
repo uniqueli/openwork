@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git fetch:*)",
+      "Bash(git merge:*)",
+      "Bash(git add:*)",
+      "Bash(git rm:*)",
+      "Bash(git commit:*)",
+      "Bash(npm run lint:*)",
+      "mcp__ide__getDiagnostics",
+      "Bash(npx tsc:*)",
+      "Bash(npm run dev:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm publish:*)",
+      "Bash(npm version:*)",
+      "mcp__docs-langchain__SearchDocsByLangChain",
+      "WebSearch",
+      "Bash(pnpm dev)",
+      "Bash(npm run typecheck:*)"
+    ]
+  }
+}

@@ -5,8 +5,25 @@ import type {
   Provider,
   StreamEvent,
   HITLDecision,
-  CustomApiConfig
+  CustomApiConfig,
+  Skill,
+  SkillsConfig
 } from "../main/types"
+
+// Helper function for IPC request/response pattern
+function ipcRequest<T>(channel: string, ...args: unknown[]): Promise<T> {
+  return new Promise((resolve) => {
+    const responseChannel = `${channel}:result`
+
+    const handler = (_: unknown, result: T) => {
+      ipcRenderer.removeListener(responseChannel, handler)
+      resolve(result)
+    }
+
+    ipcRenderer.once(responseChannel, handler)
+    ipcRenderer.send(channel, ...args)
+  })
+}
 
 // Simple electron API - replaces @electron-toolkit/preload
 const electronAPI = {
@@ -230,6 +247,138 @@ const api = {
       return () => {
         ipcRenderer.removeListener("workspace:files-changed", handler)
       }
+    }
+  },
+  skills: {
+    list: (params?: {
+      category?: string
+      includeBuiltin?: boolean
+      includeUser?: boolean
+    }): Promise<{
+      success: boolean
+      skills?: Array<Skill & { enabled: boolean }>
+      error?: string
+    }> => {
+      return ipcRequest("skills:list", params)
+    },
+    get: (skillId: string): Promise<{
+      success: boolean
+      skill?: Skill & { enabled: boolean }
+      error?: string
+    }> => {
+      return ipcRequest("skills:get", { skillId })
+    },
+    create: (params: {
+      name: string
+      description: string
+      category: string
+      prompt: string
+      subSkills?: string[]
+    }): Promise<{
+      success: boolean
+      skill?: Skill
+      error?: string
+    }> => {
+      return ipcRequest("skills:create", params)
+    },
+    update: (params: {
+      skillId: string
+      name?: string
+      description?: string
+      category?: string
+      prompt?: string
+      subSkills?: string[]
+    }): Promise<{
+      success: boolean
+      skill?: Skill
+      error?: string
+    }> => {
+      return ipcRequest("skills:update", params)
+    },
+    delete: (skillId: string): Promise<{
+      success: boolean
+      error?: string
+    }> => {
+      return ipcRequest("skills:delete", { skillId })
+    },
+    toggle: (skillId: string, enabled: boolean): Promise<{
+      success: boolean
+      enabled?: boolean
+      error?: string
+    }> => {
+      return ipcRequest("skills:toggle", { skillId, enabled })
+    },
+    setEnabled: (skillIds: string[]): Promise<{
+      success: boolean
+      skillIds?: string[]
+      error?: string
+    }> => {
+      return ipcRequest("skills:setEnabled", { skillIds })
+    },
+    getConfig: (): Promise<{
+      success: boolean
+      config?: SkillsConfig & { enabledSkills: string[] }
+      error?: string
+    }> => {
+      return ipcRequest("skills:getConfig")
+    },
+    search: (query: string): Promise<{
+      success: boolean
+      skills?: Array<Skill & { enabled: boolean }>
+      error?: string
+    }> => {
+      return ipcRequest("skills:search", { query })
+    },
+    export: (): Promise<{
+      success: boolean
+      data?: {
+        version: string
+        exportedAt: string
+        skills: Array<{
+          id: string
+          name: string
+          description: string
+          category: string
+          prompt: string
+          subSkills?: string[]
+        }>
+      }
+      error?: string
+    }> => {
+      return ipcRequest("skills:export")
+    },
+    import: (data: {
+      skills: Array<Omit<Skill, "enabled" | "isBuiltin" | "createdAt" | "updatedAt">>
+    }): Promise<{
+      success: boolean
+      imported?: Array<{ id: string; name: string }>
+      error?: string
+    }> => {
+      return ipcRequest("skills:import", { data })
+    },
+    getStats: (): Promise<{
+      success: boolean
+      stats?: {
+        total: number
+        builtin: number
+        user: number
+        enabled: number
+        byCategory: Record<string, number>
+        mostUsed: Array<{ skillId: string; count: number; lastUsed: string }>
+      }
+      error?: string
+    }> => {
+      return ipcRequest("skills:getStats")
+    },
+    recordUsage: (skillId: string): Promise<void> => {
+      return ipcRequest("skills:recordUsage", { skillId })
+    },
+    getUsage: (skillId: string): Promise<{
+      success: boolean
+      usage?: { skillId: string; count: number; lastUsed: string }
+      error?: string
+    }> => {
+      return ipcRequest("skills:getUsage", { skillId })
     }
   }
 }

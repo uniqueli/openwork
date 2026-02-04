@@ -1,4 +1,4 @@
-import type { Thread, ModelConfig, Provider, StreamEvent, HITLDecision } from "../main/types"
+import type { Thread, ModelConfig, Provider, StreamEvent, HITLDecision, Skill, SkillsConfig } from "../main/types"
 
 interface ElectronAPI {
   ipcRenderer: {
@@ -109,6 +109,110 @@ interface CustomAPI {
     onFilesChanged: (
       callback: (data: { threadId: string; workspacePath: string }) => void
     ) => () => void
+  }
+  skills: {
+    list: (params?: {
+      category?: string
+      includeBuiltin?: boolean
+      includeUser?: boolean
+    }) => Promise<{
+      success: boolean
+      skills?: Array<Skill & { enabled: boolean }>
+      error?: string
+    }>
+    get: (skillId: string) => Promise<{
+      success: boolean
+      skill?: Skill & { enabled: boolean }
+      error?: string
+    }>
+    create: (params: {
+      name: string
+      description: string
+      category: string
+      prompt: string
+      subSkills?: string[]
+    }) => Promise<{
+      success: boolean
+      skill?: Skill
+      error?: string
+    }>
+    update: (params: {
+      skillId: string
+      name?: string
+      description?: string
+      category?: string
+      prompt?: string
+      subSkills?: string[]
+    }) => Promise<{
+      success: boolean
+      skill?: Skill
+      error?: string
+    }>
+    delete: (skillId: string) => Promise<{
+      success: boolean
+      error?: string
+    }>
+    toggle: (skillId: string, enabled: boolean) => Promise<{
+      success: boolean
+      enabled?: boolean
+      error?: string
+    }>
+    setEnabled: (skillIds: string[]) => Promise<{
+      success: boolean
+      skillIds?: string[]
+      error?: string
+    }>
+    getConfig: () => Promise<{
+      success: boolean
+      config?: SkillsConfig & { enabledSkills: string[] }
+      error?: string
+    }>
+    search: (query: string) => Promise<{
+      success: boolean
+      skills?: Array<Skill & { enabled: boolean }>
+      error?: string
+    }>
+    export: () => Promise<{
+      success: boolean
+      data?: {
+        version: string
+        exportedAt: string
+        skills: Array<{
+          id: string
+          name: string
+          description: string
+          category: string
+          prompt: string
+          subSkills?: string[]
+        }>
+      }
+      error?: string
+    }>
+    import: (data: {
+      skills: Array<Omit<Skill, "enabled" | "isBuiltin" | "createdAt" | "updatedAt">>
+    }) => Promise<{
+      success: boolean
+      imported?: Array<{ id: string; name: string }>
+      error?: string
+    }>
+    getStats: () => Promise<{
+      success: boolean
+      stats?: {
+        total: number
+        builtin: number
+        user: number
+        enabled: number
+        byCategory: Record<string, number>
+        mostUsed: Array<{ skillId: string; count: number; lastUsed: string }>
+      }
+      error?: string
+    }>
+    recordUsage: (skillId: string) => Promise<void>
+    getUsage: (skillId: string) => Promise<{
+      success: boolean
+      usage?: { skillId: string; count: number; lastUsed: string }
+      error?: string
+    }>
   }
 }
 

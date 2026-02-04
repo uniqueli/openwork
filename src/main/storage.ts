@@ -250,3 +250,206 @@ export function deleteCustomApiConfig(id?: string): void {
 export function hasCustomApiConfig(): boolean {
   return getCustomApiConfigs().length > 0
 }
+
+// =============================================================================
+// Skills storage
+// =============================================================================
+
+export function getSkillsDir(): string {
+  const dir = join(getOpenworkDir(), "skills")
+  if (!existsSync(dir)) {
+    mkdirSync(dir, { recursive: true })
+  }
+  return dir
+}
+
+export function getUserSkillsFilePath(): string {
+  return join(getSkillsDir(), "user-skills.json")
+}
+
+export interface SkillStorage {
+  id: string
+  name: string
+  description: string
+  category: string
+  prompt: string
+  subSkills?: string[]
+  enabled: boolean
+  isBuiltin: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+// Load all skills (both built-in and user-defined)
+export function loadSkills(): SkillStorage[] {
+  const userSkillsPath = getUserSkillsFilePath()
+
+  let userSkills: SkillStorage[] = []
+  if (existsSync(userSkillsPath)) {
+    try {
+      const content = readFileSync(userSkillsPath, "utf-8")
+      userSkills = JSON.parse(content)
+    } catch (error) {
+      console.error("[Storage] Failed to load user skills:", error)
+    }
+  }
+
+  return userSkills
+}
+
+// Save user-defined skills
+export function saveUserSkills(skills: SkillStorage[]): void {
+  const userSkillsPath = getUserSkillsFilePath()
+  getSkillsDir() // ensure dir exists
+  writeFileSync(userSkillsPath, JSON.stringify(skills, null, 2) + "\n")
+}
+
+// Get a specific skill by ID
+export function getSkill(id: string): SkillStorage | undefined {
+  const skills = loadSkills()
+  return skills.find((s) => s.id === id)
+}
+
+// Add or update a user-defined skill
+export function saveSkill(skill: SkillStorage): void {
+  const skills = loadSkills()
+  const existingIndex = skills.findIndex((s) => s.id === skill.id)
+
+  if (existingIndex >= 0) {
+    // Update existing skill
+    skills[existingIndex] = skill
+  } else {
+    // Add new skill
+    skills.push(skill)
+  }
+
+  saveUserSkills(skills)
+}
+
+// Delete a user-defined skill
+export function deleteSkill(id: string): void {
+  const skills = loadSkills()
+  const filtered = skills.filter((s) => s.id !== id)
+  saveUserSkills(filtered)
+}
+
+// Skills configuration
+export function getSkillsConfigPath(): string {
+  return join(getOpenworkDir(), "skills-config.json")
+}
+
+export interface SkillsConfigStorage {
+  enabledSkills: string[]
+  autoLoad: boolean
+}
+
+export function loadSkillsConfig(): SkillsConfigStorage {
+  const configPath = getSkillsConfigPath()
+  if (!existsSync(configPath)) {
+    // Return default config
+    return {
+      enabledSkills: [],
+      autoLoad: false
+    }
+  }
+
+  try {
+    const content = readFileSync(configPath, "utf-8")
+    return JSON.parse(content)
+  } catch (error) {
+    console.error("[Storage] Failed to load skills config:", error)
+    return {
+      enabledSkills: [],
+      autoLoad: false
+    }
+  }
+}
+
+export function saveSkillsConfig(config: SkillsConfigStorage): void {
+  const configPath = getSkillsConfigPath()
+  writeFileSync(configPath, JSON.stringify(config, null, 2) + "\n")
+}
+
+// Get enabled skill IDs
+export function getEnabledSkillIds(): string[] {
+  const config = loadSkillsConfig()
+  return config.enabledSkills
+}
+
+// Set enabled skill IDs
+export function setEnabledSkillIds(ids: string[]): void {
+  const config = loadSkillsConfig()
+  config.enabledSkills = ids
+  saveSkillsConfig(config)
+}
+
+// Toggle a skill enabled state
+export function toggleSkillEnabled(skillId: string, enabled: boolean): void {
+  const enabledIds = getEnabledSkillIds()
+  const index = enabledIds.indexOf(skillId)
+
+  if (enabled && index < 0) {
+    enabledIds.push(skillId)
+  } else if (!enabled && index >= 0) {
+    enabledIds.splice(index, 1)
+  }
+
+  setEnabledSkillIds(enabledIds)
+}
+
+// =============================================================================
+// Skills Usage Statistics
+// =============================================================================
+
+export interface SkillUsageStats {
+  skillId: string
+  count: number
+  lastUsed: string
+}
+
+export function getSkillUsageStatsPath(): string {
+  return join(getOpenworkDir(), "skills-usage.json")
+}
+
+export function loadSkillUsageStats(): Record<string, SkillUsageStats> {
+  const statsPath = getSkillUsageStatsPath()
+  if (!existsSync(statsPath)) {
+    return {}
+  }
+
+  try {
+    const content = readFileSync(statsPath, "utf-8")
+    return JSON.parse(content)
+  } catch (error) {
+    console.error("[Storage] Failed to load skill usage stats:", error)
+    return {}
+  }
+}
+
+export function saveSkillUsageStats(stats: Record<string, SkillUsageStats>): void {
+  const statsPath = getSkillUsageStatsPath()
+  writeFileSync(statsPath, JSON.stringify(stats, null, 2) + "\n")
+}
+
+export function recordSkillUsage(skillId: string): void {
+  const stats = loadSkillUsageStats()
+  const now = new Date().toISOString()
+
+  if (stats[skillId]) {
+    stats[skillId].count += 1
+    stats[skillId].lastUsed = now
+  } else {
+    stats[skillId] = {
+      skillId,
+      count: 1,
+      lastUsed: now
+    }
+  }
+
+  saveSkillUsageStats(stats)
+}
+
+export function getSkillUsageStats(skillId: string): SkillUsageStats | undefined {
+  const stats = loadSkillUsageStats()
+  return stats[skillId]
+}

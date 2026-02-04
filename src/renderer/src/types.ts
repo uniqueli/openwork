@@ -141,3 +141,27 @@ export interface GrepMatch {
   line: number
   text: string
 }
+
+// =============================================================================
+// Skills types
+// =============================================================================
+
+export type SkillCategory = "coding" | "analysis" | "creative" | "data" | "system" | "custom"
+
+export interface Skill {
+  id: string
+  name: string
+  description: string
+  category: SkillCategory
+  prompt: string // Specialized prompt for this skill
+  subSkills?: string[] // IDs of sub-skills (for hierarchical skills)
+  enabled: boolean // Whether this skill is available
+  isBuiltin: boolean // Whether this is a built-in or user-defined skill
+  createdAt: Date
+  updatedAt: Date
+}
+
+export interface SkillsConfig {
+  enabledSkills: string[] // List of enabled skill IDs
+  autoLoad: boolean // Whether to auto-load skills on agent start
+}
