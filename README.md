@@ -107,6 +107,19 @@ CUSTOM_MODEL=your-model-name  # optional
 
 ## Changelog
 
+### v0.2.4 (2026-02-06)
+- ✨ **聊天建议卡片**: 新对话空状态下显示可点击的建议卡片（文件整理、内容创作、文档处理），点击即可快速开始对话
+
+### v0.2.3 (2026-02-04)
+- ✨ **Skills System**: 新增技能配置系统，支持 12 个内置技能和自定义技能创建
+- 🐛 修复 `deleteUserSkill` 误删所有技能记录的严重 Bug
+- 🐛 修复 Switch 组件、创建技能对话框、技能过滤等多个问题
+- ⚡ 技能初始化改为懒加载，提升启动性能
+
+### v0.2.2 (2026-xx-xx)
+- ✨ 支持多个自定义 API 配置
+- 🔧 动态 Provider 系统
+
 ### v0.2.1 (2026-01-19)
 - 🐛 **Critical Fix**: Fixed "Missing credentials" error for users without OpenAI API key
 - 🔧 Custom API now works correctly even when OPENAI_API_KEY is not set in environment
