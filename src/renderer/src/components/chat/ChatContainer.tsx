@@ -11,6 +11,8 @@ import { WorkspacePicker } from "./WorkspacePicker"
 import { selectWorkspaceFolder } from "@/lib/workspace-utils"
 import { ChatTodos } from "./ChatTodos"
 import { ContextUsageIndicator } from "./ContextUsageIndicator"
+import { SuggestionCards } from "./SuggestionCards"
+import type { SuggestionItem } from "./SuggestionCards"
 import type { Message } from "@/types"
 
 interface AgentStreamValues {
@@ -296,6 +298,29 @@ export function ChatContainer({ threadId }: ChatContainerProps): React.JSX.Eleme
     await selectWorkspaceFolder(threadId, setWorkspacePath, setWorkspaceFiles, () => {}, undefined)
   }
 
+  const handleSuggestionSelect = async (suggestion: SuggestionItem): Promise<void> => {
+    if (isLoading || !stream || !workspacePath) return
+
+    const message = suggestion.title
+    const userMessage: Message = {
+      id: crypto.randomUUID(),
+      role: "user",
+      content: message,
+      created_at: new Date()
+    }
+    appendMessage(userMessage)
+
+    const currentThread = threads.find((t) => t.thread_id === threadId)
+    if (currentThread?.title?.startsWith("Thread ")) {
+      generateTitleForFirstMessage(threadId, message)
+    }
+
+    await stream.submit(
+      { messages: [{ type: "human", content: message }] },
+      { config: { configurable: { thread_id: threadId, model_id: currentModel } } }
+    )
+  }
+
   return (
     <div className="flex flex-1 flex-col min-h-0 overflow-hidden">
       {/* Messages */}
@@ -306,7 +331,10 @@ export function ChatContainer({ threadId }: ChatContainerProps): React.JSX.Eleme
               <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
                 <div className="text-section-header mb-2">NEW THREAD</div>
                 {workspacePath ? (
-                  <div className="text-sm">Start a conversation with the agent</div>
+                  <>
+                    <div className="text-sm">Start a conversation with the agent</div>
+                    <SuggestionCards onSelect={handleSuggestionSelect} />
+                  </>
                 ) : (
                   <div className="text-sm text-center space-y-3">
                     <div>
