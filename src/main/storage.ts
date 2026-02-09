@@ -276,6 +276,7 @@ export interface SkillStorage {
   subSkills?: string[]
   enabled: boolean
   isBuiltin: boolean
+  version: string // Semantic version
   createdAt: string
   updatedAt: string
 }

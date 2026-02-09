@@ -15,20 +15,16 @@
 3. **点击按钮**，会弹出"添加自定义Provider"对话框
 
 4. **填写表单**：
-   - **ID** *（必填）: 唯一标识符
+   - **ID** \*（必填）: 唯一标识符
      - 例如：`moonshot`、`zhipu`、`deepseek`
      - 只能使用小写字母、数字和连字符
-   
-   - **显示名称** *（必填）: 在Provider列表中显示的名字
+   - **显示名称** \*（必填）: 在Provider列表中显示的名字
      - 例如：`Moonshot AI`、`Zhipu AI`、`DeepSeek`
-   
-   - **Base URL** *（必填）: API端点地址
+   - **Base URL** \*（必填）: API端点地址
      - 例如：`https://api.moonshot.cn/v1`
-   
-   - **API Key** *（必填）: 你的API密钥
+   - **API Key** \*（必填）: 你的API密钥
      - 例如：`sk-xxx...`
      - 点击眼睛图标可以显示/隐藏
-   
    - **模型名称**（可选）: 模型的名字
      - 例如：`kimi-k2-turbo-preview`、`glm-4-plus`
      - 这个名字会直接显示在Model列表中
@@ -52,6 +48,7 @@ API Key: sk-fY2r3dwk2wl3Gm1CVvLxkqGpnN5kytWsEFk9a06C9eNdZyqq
 ```
 
 **效果：**
+
 - Provider列表显示：**Moonshot AI**
 - Model列表显示：**kimi-k2-turbo-preview**
 
@@ -66,6 +63,7 @@ API Key: your-zhipu-api-key
 ```
 
 **效果：**
+
 - Provider列表显示：**Zhipu AI**
 - Model列表显示：**glm-4-plus**
 
@@ -80,6 +78,7 @@ API Key: your-deepseek-api-key
 ```
 
 **效果：**
+
 - Provider列表显示：**DeepSeek**
 - Model列表显示：**deepseek-chat**
 
@@ -146,6 +145,7 @@ API Key: your-deepseek-api-key
 所有配置保存在：`~/.openwork/.env`
 
 格式：
+
 ```bash
 CUSTOM_API_MOONSHOT_BASE_URL=https://api.moonshot.cn/v1
 CUSTOM_API_MOONSHOT_API_KEY=sk-xxx...
@@ -172,7 +172,8 @@ CUSTOM_API_MOONSHOT_MODEL=kimi-k2-turbo-preview
 
 ### Q: 添加后看不到新的Provider？
 
-**A:** 
+**A:**
+
 1. 确认所有必填字段都已填写
 2. 点击"保存"按钮
 3. 关闭并重新打开模型选择器
@@ -180,8 +181,9 @@ CUSTOM_API_MOONSHOT_MODEL=kimi-k2-turbo-preview
 
 ### Q: 如何删除Provider？
 
-**A:** 
+**A:**
 目前可以通过以下方式删除：
+
 1. 打开Settings（右上角齿轮图标）
 2. 找到Custom API部分
 3. 或者直接编辑`~/.openwork/.env`文件删除对应配置
@@ -203,6 +205,7 @@ CUSTOM_API_MOONSHOT_MODEL=kimi-k2-turbo-preview
 ### 问题：401 认证错误
 
 **解决方法：**
+
 1. 检查API Key是否正确
 2. 确认Base URL是否正确（大多数应该以`/v1`结尾）
 3. 检查API Key是否有效且未过期
@@ -210,6 +213,7 @@ CUSTOM_API_MOONSHOT_MODEL=kimi-k2-turbo-preview
 ### 问题：模型未找到
 
 **解决方法：**
+
 1. 检查模型名称是否与API提供商匹配
 2. 查看API提供商的文档确认可用的模型名称
 3. 尝试留空模型名称字段
@@ -217,6 +221,7 @@ CUSTOM_API_MOONSHOT_MODEL=kimi-k2-turbo-preview
 ### 问题：请求超时
 
 **解决方法：**
+
 1. 检查网络连接
 2. 确认Base URL是否可访问
 3. 检查API服务是否正常
@@ -224,6 +229,7 @@ CUSTOM_API_MOONSHOT_MODEL=kimi-k2-turbo-preview
 ## 总结
 
 现在你可以：
+
 1. ✅ 通过模型选择器快速添加自定义Provider
 2. ✅ 每个Provider显示你配置的名字
 3. ✅ 每个Model显示你配置的模型名

@@ -43,6 +43,7 @@ Model Name: gpt-4  (可选)
 ## 常见配置示例
 
 ### OpenAI 官方 API
+
 ```
 Base URL: https://api.openai.com/v1
 API Key: sk-...
@@ -50,6 +51,7 @@ Model Name: gpt-4
 ```
 
 ### Azure OpenAI
+
 ```
 Base URL: https://your-resource.openai.azure.com/openai/deployments/your-deployment
 API Key: your-azure-key
@@ -57,6 +59,7 @@ Model Name: gpt-4
 ```
 
 ### 本地 vLLM
+
 ```
 Base URL: http://localhost:8000/v1
 API Key: any-string
@@ -64,6 +67,7 @@ Model Name: your-model-name
 ```
 
 ### Ollama (OpenAI 兼容模式)
+
 ```
 Base URL: http://localhost:11434/v1
 API Key: ollama
@@ -73,11 +77,13 @@ Model Name: llama2
 ## 验证配置
 
 ### 检查配置文件
+
 ```bash
 cat ~/.openwork/.env
 ```
 
 应该看到：
+
 ```
 CUSTOM_BASE_URL=https://api.openai.com/v1
 CUSTOM_API_KEY=sk-...
@@ -85,7 +91,9 @@ CUSTOM_MODEL=gpt-4
 ```
 
 ### 检查日志
+
 打开开发者工具（Cmd/Ctrl + Shift + I），在控制台中应该看到：
+
 ```
 [Runtime] Using model: custom
 [Runtime] Custom API config present: true
@@ -94,23 +102,29 @@ CUSTOM_MODEL=gpt-4
 ## 故障排除
 
 ### 问题: 保存按钮是灰色的
+
 **原因**: Base URL 或 API Key 为空  
 **解决**: 确保两个必填字段都已填写
 
 ### 问题: 配置保存后不生效
+
 **原因**: 可能需要重启应用  
 **解决**: 关闭并重新打开应用
 
 ### 问题: 请求失败
+
 **检查清单**:
+
 - [ ] Base URL 格式正确（包含 `/v1` 后缀）
 - [ ] API Key 有效
 - [ ] 端点可访问（如果是本地服务，确保已启动）
 - [ ] 端点兼容 OpenAI API 格式
 
 ### 问题: 找不到 Custom API 选项
+
 **原因**: 可能需要重新构建  
 **解决**:
+
 ```bash
 npm run build
 npm run dev
@@ -119,12 +133,15 @@ npm run dev
 ## 高级用法
 
 ### 使用环境变量
+
 直接编辑配置文件：
+
 ```bash
 nano ~/.openwork/.env
 ```
 
 添加：
+
 ```bash
 CUSTOM_BASE_URL=https://api.example.com/v1
 CUSTOM_API_KEY=your-key
@@ -132,12 +149,14 @@ CUSTOM_MODEL=your-model
 ```
 
 ### 切换不同的端点
+
 1. 打开配置对话框
 2. 修改 Base URL
 3. 保存
 4. 无需重启即可生效
 
 ### 删除配置
+
 1. 打开配置对话框
 2. 点击 **Remove Key** 按钮
 3. 确认删除
@@ -145,6 +164,7 @@ CUSTOM_MODEL=your-model
 ## 安全提示
 
 ⚠️ **重要**:
+
 - 不要分享你的 API Key
 - 不要将 `.env` 文件提交到版本控制
 - 定期更换 API Key
@@ -160,6 +180,7 @@ CUSTOM_MODEL=your-model
 ## 下一步
 
 配置完成后，你可以：
+
 - 选择 Custom API 模型
 - 创建新的对话
 - 使用所有 openwork 功能

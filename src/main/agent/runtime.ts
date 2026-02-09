@@ -1,7 +1,12 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { createDeepAgent } from "deepagents"
 import { getDefaultModel } from "../ipc/models"
-import { getApiKey, getThreadCheckpointPath, getCustomApiConfigs, getEnabledSkillIds } from "../storage"
+import {
+  getApiKey,
+  getThreadCheckpointPath,
+  getCustomApiConfigs,
+  getEnabledSkillIds
+} from "../storage"
 import { ChatAnthropic } from "@langchain/anthropic"
 import { ChatOpenAI } from "@langchain/openai"
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai"

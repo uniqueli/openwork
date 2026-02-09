@@ -42,12 +42,12 @@ Or configure them in-app via the settings panel.
 
 ## Supported Models
 
-| Provider  | Models                                                                                 |
-| --------- | -------------------------------------------------------------------------------------- |
-| Anthropic | Claude Opus 4.5, Claude Sonnet 4.5, Claude Haiku 4.5, Claude Opus 4.1, Claude Sonnet 4 |
-| OpenAI    | GPT-5.2, GPT-5.1, o3, o3 Mini, o4 Mini, o1, GPT-4.1, GPT-4o                            |
-| Google    | Gemini 3 Pro Preview, Gemini 3 Flash Preview, Gemini 2.5 Pro, Gemini 2.5 Flash, Gemini 2.5 Flash Lite |
-| **Custom**    | **Add unlimited custom providers!**                                |
+| Provider   | Models                                                                                                |
+| ---------- | ----------------------------------------------------------------------------------------------------- |
+| Anthropic  | Claude Opus 4.5, Claude Sonnet 4.5, Claude Haiku 4.5, Claude Opus 4.1, Claude Sonnet 4                |
+| OpenAI     | GPT-5.2, GPT-5.1, o3, o3 Mini, o4 Mini, o1, GPT-4.1, GPT-4o                                           |
+| Google     | Gemini 3 Pro Preview, Gemini 3 Flash Preview, Gemini 2.5 Pro, Gemini 2.5 Flash, Gemini 2.5 Flash Lite |
+| **Custom** | **Add unlimited custom providers!**                                                                   |
 
 ## ✨ Multiple Custom API Providers
 
@@ -68,6 +68,7 @@ Or configure them in-app via the settings panel.
 ### Supported Custom APIs
 
 Works with any OpenAI-compatible API:
+
 - **Chinese AI Providers**: Moonshot AI (Kimi), Zhipu AI (GLM), DeepSeek, Baichuan, etc.
 - **Self-hosted models**: vLLM, Text Generation WebUI, LocalAI, Ollama (with OpenAI compatibility)
 - **Cloud services**: Azure OpenAI, AWS Bedrock (with proxy), Cloudflare AI
@@ -76,6 +77,7 @@ Works with any OpenAI-compatible API:
 ### Example Configurations
 
 **Moonshot AI (Kimi)**
+
 ```
 ID: moonshot
 Display Name: Moonshot AI
@@ -84,6 +86,7 @@ Model Name: kimi-k2-turbo-preview
 ```
 
 **Zhipu AI (GLM)**
+
 ```
 ID: zhipu
 Display Name: Zhipu AI
@@ -92,13 +95,16 @@ Model Name: glm-4-plus
 ```
 
 **DeepSeek**
+
 ```
 ID: deepseek
 Display Name: DeepSeek
 Base URL: https://api.deepseek.com/v1
 Model Name: deepseek-chat
 ```
+
 Configure via Settings UI or by setting environment variables:
+
 ```bash
 CUSTOM_BASE_URL=https://api.example.com/v1
 CUSTOM_API_KEY=your-api-key
@@ -107,25 +113,41 @@ CUSTOM_MODEL=your-model-name  # optional
 
 ## Changelog
 
+### v0.3.0 (2026-02-09)
+
+- 🚀 **Skills System Major Upgrade**: 技能系统重大升级
+  - ⚡ **Performance**: 将所有文件操作转换为异步I/O，解决UI阻塞问题
+  - 🔒 **Security**: 新增完整的输入验证系统，防止注入攻击和资源耗尽
+  - 💾 **Memory**: 实现LRU缓存机制（最大100个技能），防止内存泄漏
+  - 🎯 **Skill Combination**: 新增技能组合功能，支持跨学科专业知识整合
+  - 📝 **Version Management**: 为所有技能添加语义化版本控制
+  - 🛠️ **Error Handling**: 增强错误处理系统，提供中文错误消息和恢复建议
+- 🐛 **UI Fix**: 修复创建技能对话框在From Template模式下窗口过大、关闭按钮不可见的问题
+
 ### v0.2.4 (2026-02-06)
+
 - ✨ **聊天建议卡片**: 新对话空状态下显示可点击的建议卡片（文件整理、内容创作、文档处理），点击即可快速开始对话
 
 ### v0.2.3 (2026-02-04)
+
 - ✨ **Skills System**: 新增技能配置系统，支持 12 个内置技能和自定义技能创建
 - 🐛 修复 `deleteUserSkill` 误删所有技能记录的严重 Bug
 - 🐛 修复 Switch 组件、创建技能对话框、技能过滤等多个问题
 - ⚡ 技能初始化改为懒加载，提升启动性能
 
 ### v0.2.2 (2026-xx-xx)
+
 - ✨ 支持多个自定义 API 配置
 - 🔧 动态 Provider 系统
 
 ### v0.2.1 (2026-01-19)
+
 - 🐛 **Critical Fix**: Fixed "Missing credentials" error for users without OpenAI API key
 - 🔧 Custom API now works correctly even when OPENAI_API_KEY is not set in environment
 - 📝 Improved logging for debugging custom API configurations
 
 ### v0.2.0 (2026-01-18)
+
 - ✨ **Multiple Custom API Providers**: Add unlimited custom providers via UI
 - 🎨 **Improved UX**: One-click provider addition with "+ 添加Provider" button
 - 🔧 **Better Configuration**: Each provider has its own name, base URL, API key, and model
@@ -133,6 +155,7 @@ CUSTOM_MODEL=your-model-name  # optional
 - 📝 **Simplified Settings**: Cleaner settings dialog focused on standard providers
 
 ### v0.1.0 (2026-01-15)
+
 - 🎉 Initial release with basic custom API support
 - 🔑 Single custom API configuration via Settings
 

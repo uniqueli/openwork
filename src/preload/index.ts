@@ -261,7 +261,9 @@ const api = {
     }> => {
       return ipcRequest("skills:list", params)
     },
-    get: (skillId: string): Promise<{
+    get: (
+      skillId: string
+    ): Promise<{
       success: boolean
       skill?: Skill & { enabled: boolean }
       error?: string
@@ -295,20 +297,27 @@ const api = {
     }> => {
       return ipcRequest("skills:update", params)
     },
-    delete: (skillId: string): Promise<{
+    delete: (
+      skillId: string
+    ): Promise<{
       success: boolean
       error?: string
     }> => {
       return ipcRequest("skills:delete", { skillId })
     },
-    toggle: (skillId: string, enabled: boolean): Promise<{
+    toggle: (
+      skillId: string,
+      enabled: boolean
+    ): Promise<{
       success: boolean
       enabled?: boolean
       error?: string
     }> => {
       return ipcRequest("skills:toggle", { skillId, enabled })
     },
-    setEnabled: (skillIds: string[]): Promise<{
+    setEnabled: (
+      skillIds: string[]
+    ): Promise<{
       success: boolean
       skillIds?: string[]
       error?: string
@@ -322,7 +331,9 @@ const api = {
     }> => {
       return ipcRequest("skills:getConfig")
     },
-    search: (query: string): Promise<{
+    search: (
+      query: string
+    ): Promise<{
       success: boolean
       skills?: Array<Skill & { enabled: boolean }>
       error?: string
@@ -373,7 +384,9 @@ const api = {
     recordUsage: (skillId: string): Promise<void> => {
       return ipcRequest("skills:recordUsage", { skillId })
     },
-    getUsage: (skillId: string): Promise<{
+    getUsage: (
+      skillId: string
+    ): Promise<{
       success: boolean
       usage?: { skillId: string; count: number; lastUsed: string }
       error?: string

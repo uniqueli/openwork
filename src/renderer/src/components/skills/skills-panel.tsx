@@ -177,7 +177,9 @@ export function SkillsPanel(_props: SkillsPanelProps) {
                               <div className="flex items-center gap-2 mb-1">
                                 <h4 className="text-sm font-medium text-white">{skill.name}</h4>
                                 <Badge
-                                  className={categoryColors[skill.category] || categoryColors.custom}
+                                  className={
+                                    categoryColors[skill.category] || categoryColors.custom
+                                  }
                                 >
                                   {skill.category}
                                 </Badge>
@@ -187,7 +189,9 @@ export function SkillsPanel(_props: SkillsPanelProps) {
                                   </Badge>
                                 )}
                               </div>
-                              <p className="text-xs text-gray-400 line-clamp-2">{skill.description}</p>
+                              <p className="text-xs text-gray-400 line-clamp-2">
+                                {skill.description}
+                              </p>
                             </div>
                             <Switch
                               checked={skill.enabled}

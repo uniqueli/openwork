@@ -29,6 +29,7 @@ npm start
 ```
 
 Verify that:
+
 - The app launches correctly
 - You can add custom providers via the "+ 添加Provider" button
 - Custom providers appear in the provider list
@@ -41,6 +42,7 @@ npm login
 ```
 
 Enter your npm credentials:
+
 - Username: `uniqueli`
 - Password: (your npm password)
 - Email: (your npm email)
@@ -57,9 +59,11 @@ The `--access public` flag is required for scoped packages (@uniqueli/openwork).
 ### 5. Verify Publication
 
 After publishing, verify at:
+
 - https://www.npmjs.com/package/@uniqueli/openwork
 
 Check that:
+
 - Version shows as 0.2.0
 - README displays correctly
 - Package can be installed: `npm install -g @uniqueli/openwork`
@@ -76,15 +80,19 @@ Check that:
 ## Troubleshooting
 
 ### "You must be logged in to publish packages"
+
 Run `npm login` first.
 
 ### "You do not have permission to publish"
+
 Make sure you're logged in as the correct user and have access to the `@uniqueli` scope.
 
 ### "Package already exists"
+
 The version might already be published. Increment the version number in `package.json`.
 
 ### Build errors
+
 Run `npm run typecheck` to see TypeScript errors, then fix them before building.
 
 ## Post-publish
@@ -92,6 +100,7 @@ Run `npm run typecheck` to see TypeScript errors, then fix them before building.
 After successful publication:
 
 1. Test installation:
+
    ```bash
    npm install -g @uniqueli/openwork@0.2.0
    openwork

@@ -56,6 +56,7 @@ CUSTOM_MODEL=your-model-name  # 可选
 - 支持流式响应（streaming）
 
 常见的兼容服务包括：
+
 - OpenAI 官方 API
 - Azure OpenAI
 - 本地部署的 LLM（如 vLLM, Text Generation WebUI）

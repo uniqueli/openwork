@@ -31,6 +31,7 @@ cat ~/.openwork/.env
 ```
 
 应该看到：
+
 ```
 CUSTOM_BASE_URL=https://api.openai.com/v1
 CUSTOM_API_KEY=your-api-key
@@ -93,6 +94,7 @@ CUSTOM_MODEL=gpt-4
 ### 问题 1: 保存后配置没有生效
 
 **检查**:
+
 - 查看浏览器控制台是否有错误
 - 检查 `~/.openwork/.env` 文件是否正确写入
 - 重启应用
@@ -100,6 +102,7 @@ CUSTOM_MODEL=gpt-4
 ### 问题 2: 自定义 API 不可用
 
 **检查**:
+
 - 确认 Base URL 和 API Key 都已配置
 - 在模型列表中查看 "Custom API" 的 available 状态
 - 检查控制台日志
@@ -107,6 +110,7 @@ CUSTOM_MODEL=gpt-4
 ### 问题 3: 请求失败
 
 **检查**:
+
 - Base URL 格式是否正确（应该包含 `/v1` 后缀）
 - API Key 是否有效
 - 自定义端点是否兼容 OpenAI API 格式
@@ -115,31 +119,34 @@ CUSTOM_MODEL=gpt-4
 ## 代码验证点
 
 ### 1. storage.ts
+
 ```typescript
 export interface CustomApiConfig {
-  baseUrl: string  // ✅ 包含 baseUrl
+  baseUrl: string // ✅ 包含 baseUrl
   apiKey: string
   model?: string
 }
 ```
 
 ### 2. runtime.ts
+
 ```typescript
 return new ChatOpenAI({
   model: customConfig.model || model,
   openAIApiKey: customConfig.apiKey,
   configuration: {
-    baseURL: customConfig.baseUrl  // ✅ 使用 baseUrl
+    baseURL: customConfig.baseUrl // ✅ 使用 baseUrl
   }
 })
 ```
 
 ### 3. SettingsDialog.tsx
+
 ```tsx
 <Input
   type="text"
-  value={customConfig.baseUrl}  // ✅ 绑定 baseUrl
-  onChange={(e) => handleCustomConfigChange('baseUrl', e.target.value)}
+  value={customConfig.baseUrl} // ✅ 绑定 baseUrl
+  onChange={(e) => handleCustomConfigChange("baseUrl", e.target.value)}
   placeholder="https://api.example.com/v1"
 />
 ```
@@ -155,6 +162,7 @@ return new ChatOpenAI({
 - ✅ IPC 方法传递完整配置对象
 
 如果你看到的界面中没有 Base URL 输入框，可能需要：
+
 1. 重新构建应用：`npm run build`
 2. 清除缓存并重启
 3. 检查是否使用了最新的代码

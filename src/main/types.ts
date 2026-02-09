@@ -214,6 +214,7 @@ export interface Skill {
   subSkills?: string[] // IDs of sub-skills (for hierarchical skills)
   enabled: boolean // Whether this skill is available
   isBuiltin: boolean // Whether this is a built-in or user-defined skill
+  version: string // Semantic version (e.g., "1.0.0")
   createdAt: Date
   updatedAt: Date
 }

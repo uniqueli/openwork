@@ -3,12 +3,14 @@
 ## ✅ 已完成的修改
 
 ### 后端实现
+
 - [x] `src/main/types.ts` - 添加 CustomApiConfig 接口和 'custom' provider
 - [x] `src/main/storage.ts` - 实现 getCustomApiConfig, setCustomApiConfig, deleteCustomApiConfig, hasCustomApiConfig
 - [x] `src/main/ipc/models.ts` - 添加 IPC 处理器和 Custom API 模型
 - [x] `src/main/agent/runtime.ts` - 集成自定义 API 到 getModelInstance
 
 ### 前端实现
+
 - [x] `src/renderer/src/types.ts` - 添加 CustomApiConfig 接口和 'custom' provider
 - [x] `src/preload/index.ts` - 暴露 getCustomApiConfig, setCustomApiConfig, deleteCustomApiConfig 方法
 - [x] `src/preload/index.d.ts` - 添加方法类型定义
@@ -16,6 +18,7 @@
 - [x] `src/renderer/src/components/settings/SettingsDialog.tsx` - 添加完整的自定义 API 配置界面
 
 ### 文档
+
 - [x] `README.md` - 更新支持的模型表格
 - [x] `CUSTOM_API.md` - 详细使用指南
 - [x] `CHANGES_SUMMARY.md` - 修改总结
@@ -29,6 +32,7 @@
 ## 🎯 核心功能验证
 
 ### ApiKeyDialog 组件
+
 - [x] 为 Custom API 显示 Base URL 输入框
 - [x] 为 Custom API 显示 API Key 输入框
 - [x] 为 Custom API 显示 Model Name 输入框（可选）
@@ -39,18 +43,21 @@
 - [x] 删除功能调用 deleteCustomApiConfig
 
 ### SettingsDialog 组件
+
 - [x] 显示 Custom API 配置部分
 - [x] 包含 Base URL, API Key, Model Name 三个字段
 - [x] 显示配置状态（Configured/Unsaved/Not set）
 - [x] 保存和删除按钮功能正常
 
 ### 存储层
+
 - [x] getCustomApiConfig 读取 CUSTOM_BASE_URL, CUSTOM_API_KEY, CUSTOM_MODEL
 - [x] setCustomApiConfig 写入配置到 .env 文件
 - [x] deleteCustomApiConfig 删除配置
 - [x] hasCustomApiConfig 检查配置是否存在
 
 ### IPC 层
+
 - [x] models:getCustomApiConfig 处理器
 - [x] models:setCustomApiConfig 处理器
 - [x] models:deleteCustomApiConfig 处理器
@@ -58,6 +65,7 @@
 - [x] models:list 正确显示 Custom API 可用性
 
 ### Runtime 层
+
 - [x] getModelInstance 识别 'custom' 模型
 - [x] 使用 customConfig.baseUrl 创建 ChatOpenAI 实例
 - [x] 使用 customConfig.apiKey 作为 API Key
@@ -66,6 +74,7 @@
 ## 🧪 测试场景
 
 ### 场景 1: 首次配置
+
 1. [ ] 打开应用
 2. [ ] 点击 Custom API 的配置图标
 3. [ ] 填写 Base URL: `https://api.openai.com/v1`
@@ -78,6 +87,7 @@
 10. [ ] 验证请求发送到自定义端点
 
 ### 场景 2: 更新配置
+
 1. [ ] 打开配置对话框
 2. [ ] 验证显示现有的 Base URL 和 Model Name
 3. [ ] 修改 Base URL
@@ -85,12 +95,14 @@
 5. [ ] 验证配置已更新
 
 ### 场景 3: 删除配置
+
 1. [ ] 打开配置对话框
 2. [ ] 点击 Remove Key
 3. [ ] 验证配置已删除
 4. [ ] 验证 Custom API 显示为 "Not set"
 
 ### 场景 4: 环境变量配置
+
 1. [ ] 手动编辑 `~/.openwork/.env`
 2. [ ] 添加 CUSTOM_BASE_URL, CUSTOM_API_KEY, CUSTOM_MODEL
 3. [ ] 重启应用
@@ -99,6 +111,7 @@
 6. [ ] 验证显示配置的值
 
 ### 场景 5: 字段验证
+
 1. [ ] 打开配置对话框
 2. [ ] 只填写 Base URL，不填 API Key
 3. [ ] 验证 Save 按钮禁用
@@ -108,6 +121,7 @@
 7. [ ] 验证 Save 按钮启用
 
 ### 场景 6: 其他 Providers 不受影响
+
 1. [ ] 配置 Anthropic API Key
 2. [ ] 验证只显示 API Key 输入框
 3. [ ] 配置 OpenAI API Key
@@ -186,6 +200,7 @@
 ## 📦 交付清单
 
 ### 代码文件（10 个）
+
 1. ✅ src/main/types.ts
 2. ✅ src/main/storage.ts
 3. ✅ src/main/ipc/models.ts
@@ -198,6 +213,7 @@
 10. ✅ README.md
 
 ### 文档文件（8 个）
+
 1. ✅ CUSTOM_API.md
 2. ✅ CHANGES_SUMMARY.md
 3. ✅ TESTING_CHECKLIST.md
@@ -212,6 +228,7 @@
 所有功能已实现，所有文档已编写，可以开始使用自定义 API 功能了！
 
 ### 下一步
+
 1. 运行 `npm run dev` 启动应用
 2. 按照 QUICK_START_CUSTOM_API.md 配置
 3. 开始使用自定义 API！

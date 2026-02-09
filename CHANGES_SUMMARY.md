@@ -9,16 +9,19 @@
 ### 1. 类型定义
 
 #### `src/main/types.ts`
+
 - 添加 `'custom'` 到 `ProviderId` 类型
 - 添加 `CustomApiConfig` 接口定义
 
 #### `src/renderer/src/types.ts`
+
 - 同步添加 `'custom'` 到 `ProviderId` 类型
 - 添加 `CustomApiConfig` 接口定义
 
 ### 2. 存储层 (Storage)
 
 #### `src/main/storage.ts`
+
 - 添加 `CustomApiConfig` 接口
 - 添加 `getCustomApiConfig()` 函数 - 获取自定义 API 配置
 - 添加 `setCustomApiConfig()` 函数 - 保存自定义 API 配置
@@ -27,6 +30,7 @@
 - 更新 `ENV_VAR_NAMES` 添加 `custom: 'CUSTOM_API_KEY'`
 
 配置存储在 `~/.openwork/.env` 文件中：
+
 - `CUSTOM_BASE_URL` - API 端点地址
 - `CUSTOM_API_KEY` - API 密钥
 - `CUSTOM_MODEL` - 模型名称（可选）
@@ -34,6 +38,7 @@
 ### 3. IPC 层 (Main Process)
 
 #### `src/main/ipc/models.ts`
+
 - 导入新的存储函数
 - 添加 `'custom'` 到 `PROVIDERS` 数组
 - 添加 `models:getCustomApiConfig` IPC 处理器
@@ -46,6 +51,7 @@
 ### 4. Agent Runtime
 
 #### `src/main/agent/runtime.ts`
+
 - 导入 `getCustomApiConfig` 函数
 - 更新 `getModelInstance()` 函数，添加自定义 API 支持
 - 当模型 ID 为 'custom' 或以 'custom-' 开头时，使用自定义配置
@@ -54,6 +60,7 @@
 ### 5. Preload 层
 
 #### `src/preload/index.ts`
+
 - 添加 `getCustomApiConfig` IPC 方法
 - 添加 `setCustomApiConfig` IPC 方法
 - 添加 `deleteCustomApiConfig` IPC 方法
@@ -61,6 +68,7 @@
 ### 6. UI 层 (Renderer)
 
 #### `src/renderer/src/components/settings/SettingsDialog.tsx`
+
 - 添加 `CustomConfig` 接口定义
 - 添加自定义配置相关的状态管理
 - 添加 `handleCustomConfigChange()` 函数 - 处理配置输入变化
@@ -77,12 +85,14 @@
 ### 7. 文档
 
 #### `README.md`
+
 - 更新支持的模型表格，添加 Custom 行
 - 添加自定义 API 配置说明
 - 添加环境变量配置示例
 - 添加指向详细文档的链接
 
 #### `CUSTOM_API.md` (新文件)
+
 - 详细的自定义 API 配置指南
 - 配置方式说明（UI 和环境变量）
 - 使用说明

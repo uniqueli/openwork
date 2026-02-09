@@ -7,11 +7,18 @@ export interface SwitchProps extends Omit<React.HTMLAttributes<HTMLButtonElement
   disabled?: boolean
 }
 
-function Switch({ checked = false, onCheckedChange, disabled = false, className, onClick, ...props }: SwitchProps) {
+function Switch({
+  checked = false,
+  onCheckedChange,
+  disabled = false,
+  className,
+  onClick,
+  ...props
+}: SwitchProps) {
   const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     // Call external onClick first (e.g., for stopPropagation)
     onClick?.(e)
-    
+
     if (!disabled) {
       onCheckedChange?.(!checked)
     }

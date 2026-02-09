@@ -3,6 +3,7 @@
 ## ✅ 已完成的修改
 
 ### 1. package.json
+
 - ✅ 包名改为: `@uniqueli/openwork`
 - ✅ 作者改为: `uniqueli`
 - ✅ 仓库地址改为: `https://github.com/uniqueli/openwork`
@@ -12,6 +13,7 @@
 - ✅ 描述更新: 添加 "with custom API support"
 
 ### 2. README.md
+
 - ✅ 标题改为: `@uniqueli/openwork`
 - ✅ npm badge 更新为新包名
 - ✅ 安装命令更新: `npx @uniqueli/openwork`
@@ -21,6 +23,7 @@
 - ✅ 添加 "Enhanced with Custom API Support" 说明
 
 ### 3. 新增文件
+
 - ✅ `PUBLISH.md` - 详细的发布指南
 - ✅ `publish.sh` - 自动化发布脚本
 - ✅ `PACKAGE_SETUP.md` - 本文件
@@ -43,6 +46,7 @@ cd openwork
 ```
 
 脚本会自动：
+
 1. 检查 npm 登录状态
 2. 检查 Git 状态
 3. 更新版本号
@@ -96,6 +100,7 @@ npx @uniqueli/openwork
 ### 1. npm 账号
 
 确保你有 npm 账号并已登录：
+
 ```bash
 npm whoami
 ```
@@ -105,6 +110,7 @@ npm whoami
 ### 2. Scoped 包
 
 由于包名是 scoped（@uniqueli/openwork），发布时必须添加 `--access public`：
+
 ```bash
 npm publish --access public
 ```
@@ -112,6 +118,7 @@ npm publish --access public
 ### 3. 版本管理
 
 遵循语义化版本（Semantic Versioning）：
+
 - **Patch** (0.1.0 -> 0.1.1): 修复 bug
 - **Minor** (0.1.0 -> 0.2.0): 添加新功能（向后兼容）
 - **Major** (0.1.0 -> 1.0.0): 破坏性更改
@@ -119,6 +126,7 @@ npm publish --access public
 ### 4. Git 标签
 
 每次发布后建议打 Git 标签：
+
 ```bash
 git tag v0.1.0
 git push origin v0.1.0
@@ -149,6 +157,7 @@ git push origin v0.1.1
 ## 🎯 下一步
 
 1. **发布第一个版本**
+
    ```bash
    ./publish.sh patch
    ```

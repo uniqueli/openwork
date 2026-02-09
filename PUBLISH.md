@@ -92,7 +92,8 @@ npx @uniqueli/openwork
 
 **原因**: 没有权限发布到这个包名
 
-**解决**: 
+**解决**:
+
 - 确保已登录正确的 npm 账号
 - 确保包名没有被其他人占用
 - 使用 `--access public` 参数
@@ -102,6 +103,7 @@ npx @uniqueli/openwork
 **原因**: 包名已被占用
 
 **解决**:
+
 - 更改包名（在 package.json 中）
 - 或者联系 npm 支持
 
@@ -110,6 +112,7 @@ npx @uniqueli/openwork
 **原因**: 依赖或代码问题
 
 **解决**:
+
 - 运行 `npm install` 重新安装依赖
 - 检查 TypeScript 错误
 - 查看构建日志
@@ -181,8 +184,8 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with:
-          node-version: '18'
-          registry-url: 'https://registry.npmjs.org'
+          node-version: "18"
+          registry-url: "https://registry.npmjs.org"
       - run: npm install
       - run: npm run build
       - run: npm publish --access public

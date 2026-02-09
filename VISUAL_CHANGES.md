@@ -58,6 +58,7 @@
 ## 关键变化
 
 ### 1. 新增 Base URL 字段
+
 - **位置**: 对话框顶部，第一个输入框
 - **标签**: "Base URL"
 - **占位符**: "https://api.example.com/v1"
@@ -65,19 +66,23 @@
 - **自动焦点**: 是（仅 Custom API）
 
 ### 2. API Key 字段保持不变
+
 - **位置**: 中间
 - **标签**: "API Key"
 - **功能**: 显示/隐藏切换
 - **必填**: 是
 
 ### 3. 新增 Model Name 字段
+
 - **位置**: 对话框底部
 - **标签**: "Model Name (Optional)"
 - **占位符**: "gpt-4, claude-3-opus, etc."
 - **必填**: 否
 
 ### 4. 环境变量提示
+
 每个字段下方都显示对应的环境变量名称：
+
 - `CUSTOM_BASE_URL`
 - `CUSTOM_API_KEY`
 - `CUSTOM_MODEL`
@@ -89,6 +94,7 @@
 ## 交互流程
 
 ### 新建配置
+
 1. 用户点击 Custom API 的配置图标
 2. 对话框打开，Base URL 字段获得焦点
 3. 用户输入 Base URL
@@ -99,6 +105,7 @@
 8. 配置保存，对话框关闭
 
 ### 更新配置
+
 1. 用户点击 Custom API 的配置图标
 2. 对话框打开，自动加载现有的 Base URL 和 Model Name
 3. API Key 显示为掩码 `••••••••••••••••`
@@ -107,6 +114,7 @@
 6. 配置更新，对话框关闭
 
 ### 删除配置
+
 1. 用户点击 Custom API 的配置图标
 2. 对话框打开，显示 "Remove Key" 按钮
 3. 用户点击 "Remove Key"

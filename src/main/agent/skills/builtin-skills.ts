@@ -10,6 +10,7 @@ export const BUILTIN_SKILLS: Skill[] = [
     name: "SQL Expert",
     description: "Specialized in SQL query writing, database schema analysis, and query optimization",
     category: "data",
+    version: "1.0.0",
     prompt: `You are a SQL and database expert. Your expertise includes:
 
 ## Core Capabilities
@@ -54,6 +55,7 @@ When writing SQL:
     name: "Code Reviewer",
     description: "Expert in code review, best practices, and identifying potential issues",
     category: "coding",
+    version: "1.0.0",
     prompt: `You are an expert code reviewer. Your role is to analyze code for:
 
 ## Review Focus Areas
@@ -117,6 +119,7 @@ Be specific and actionable. Include code examples for fixes when helpful.`,
     name: "Technical Writer",
     description: "Specializes in writing clear, comprehensive technical documentation",
     category: "creative",
+    version: "1.0.0",
     prompt: `You are a technical documentation expert. Your expertise includes:
 
 ## Documentation Types
@@ -187,6 +190,7 @@ Use markdown formatting with:
     name: "Debugging Expert",
     description: "Specializes in systematic debugging and problem-solving",
     category: "system",
+    version: "1.0.0",
     prompt: `You are a debugging expert. Follow this systematic approach:
 
 ## Debugging Methodology
@@ -259,6 +263,7 @@ Focus on finding the root cause, not just treating symptoms.`,
     name: "Test Engineer",
     description: "Specializes in writing comprehensive tests and test strategies",
     category: "coding",
+    version: "1.0.0",
     prompt: `You are a test engineering expert. Your expertise includes:
 
 ## Testing Philosophy
@@ -359,6 +364,7 @@ When suggesting tests:
     name: "Refactoring Expert",
     description: "Specializes in code refactoring, improving code quality, and reducing technical debt",
     category: "coding",
+    version: "1.0.0",
     prompt: `You are a refactoring expert. Your expertise includes:
 
 ## Refactoring Principles
@@ -443,6 +449,7 @@ When refactoring:
     name: "API Designer",
     description: "Expert in RESTful API design, documentation, and best practices",
     category: "coding",
+    version: "1.0.0",
     prompt: `You are an API design expert. Your expertise includes:
 
 ## RESTful API Design
@@ -557,6 +564,7 @@ When designing APIs:
     name: "Git Expert",
     description: "Specializes in Git workflows, branching strategies, and version control best practices",
     category: "system",
+    version: "1.0.0",
     prompt: `You are a Git and version control expert. Your expertise includes:
 
 ## Git Fundamentals
@@ -710,6 +718,7 @@ When helping with Git:
     name: "Performance Optimizer",
     description: "Expert in code optimization, profiling, and performance improvements",
     category: "coding",
+    version: "1.0.0",
     prompt: `You are a performance optimization expert. Your expertise includes:
 
 ## Performance Optimization Strategy
@@ -848,6 +857,7 @@ When optimizing:
     name: "Security Auditor",
     description: "Expert in identifying security vulnerabilities and implementing secure coding practices",
     category: "analysis",
+    version: "1.0.0",
     prompt: `You are a security expert. Your expertise includes identifying vulnerabilities and implementing secure coding practices.
 
 ## OWASP Top 10
@@ -1003,6 +1013,7 @@ When auditing code:
     name: "Python Expert",
     description: "Specialized in Python programming, best practices, and ecosystem tools",
     category: "coding",
+    version: "1.0.0",
     prompt: `You are a Python expert. Your expertise includes:
 
 ## Python Best Practices
@@ -1182,6 +1193,7 @@ When writing Python:
     name: "JavaScript Expert",
     description: "Expert in modern JavaScript (ES6+), TypeScript, and browser APIs",
     category: "coding",
+    version: "1.0.0",
     prompt: `You are a JavaScript/TypeScript expert. Your expertise includes:
 
 ## Modern JavaScript (ES6+)

@@ -1,4 +1,12 @@
-import type { Thread, ModelConfig, Provider, StreamEvent, HITLDecision, Skill, SkillsConfig } from "../main/types"
+import type {
+  Thread,
+  ModelConfig,
+  Provider,
+  StreamEvent,
+  HITLDecision,
+  Skill,
+  SkillsConfig
+} from "../main/types"
 
 interface ElectronAPI {
   ipcRenderer: {
@@ -152,7 +160,10 @@ interface CustomAPI {
       success: boolean
       error?: string
     }>
-    toggle: (skillId: string, enabled: boolean) => Promise<{
+    toggle: (
+      skillId: string,
+      enabled: boolean
+    ) => Promise<{
       success: boolean
       enabled?: boolean
       error?: string

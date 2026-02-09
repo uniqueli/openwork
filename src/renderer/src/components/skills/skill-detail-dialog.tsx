@@ -17,7 +17,13 @@ const categoryColors: Record<string, string> = {
   custom: "bg-cyan-500/10 text-cyan-500 border-cyan-500/20"
 }
 
-export function SkillDetailDialog({ skill, open, onClose, onToggle, onDelete }: SkillDetailDialogProps) {
+export function SkillDetailDialog({
+  skill,
+  open,
+  onClose,
+  onToggle,
+  onDelete
+}: SkillDetailDialogProps) {
   if (!open) return null
 
   return (
@@ -46,7 +52,12 @@ export function SkillDetailDialog({ skill, open, onClose, onToggle, onDelete }: 
             className="ml-4 text-gray-400 hover:text-white transition-colors"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
         </div>

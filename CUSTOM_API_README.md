@@ -3,14 +3,17 @@
 ## 🎯 快速导航
 
 ### 新用户
+
 👉 **从这里开始**: [QUICK_START_CUSTOM_API.md](QUICK_START_CUSTOM_API.md)  
 5 分钟快速配置指南，包含常见配置示例
 
 ### 详细使用
+
 📖 **完整指南**: [CUSTOM_API.md](CUSTOM_API.md)  
 详细的使用说明、配置方式、兼容性和故障排除
 
 ### 开发者
+
 🔧 **实现细节**: [IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md)  
 技术架构、修改文件清单、配置流程
 
@@ -21,6 +24,7 @@
 所有修改的详细列表和技术实现
 
 ### 测试
+
 ✅ **测试清单**: [TESTING_CHECKLIST.md](TESTING_CHECKLIST.md)  
 完整的测试步骤和验证方法
 
@@ -28,6 +32,7 @@
 所有功能的完成状态和交付清单
 
 ### 故障排除
+
 🚨 **快速修复**: [QUICK_FIX.md](QUICK_FIX.md)  
 常见问题的快速解决方案（3 步修复）
 
@@ -35,6 +40,7 @@
 完整的故障排除指南和调试技巧
 
 ### UI 变化
+
 🎨 **视觉变化**: [VISUAL_CHANGES.md](VISUAL_CHANGES.md)  
 对话框的前后对比和交互流程
 
@@ -88,6 +94,7 @@ Model Name: gpt-4 (可选)
 ## 🔧 配置示例
 
 ### OpenAI
+
 ```
 Base URL: https://api.openai.com/v1
 API Key: sk-...
@@ -95,6 +102,7 @@ Model: gpt-4
 ```
 
 ### Azure OpenAI
+
 ```
 Base URL: https://your-resource.openai.azure.com/openai/deployments/your-deployment
 API Key: your-azure-key
@@ -102,6 +110,7 @@ Model: gpt-4
 ```
 
 ### 本地 vLLM
+
 ```
 Base URL: http://localhost:8000/v1
 API Key: any-string

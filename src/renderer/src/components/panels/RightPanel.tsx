@@ -137,7 +137,12 @@ export function RightPanel(): React.JSX.Element {
   const [skillsHeight, setSkillsHeight] = useState<number | null>(null)
 
   // Track drag start heights
-  const dragStartHeights = useRef<{ tasks: number; files: number; agents: number; skills: number } | null>(null)
+  const dragStartHeights = useRef<{
+    tasks: number
+    files: number
+    agents: number
+    skills: number
+  } | null>(null)
 
   // Calculate available content height
   const getAvailableContentHeight = useCallback(() => {
@@ -220,12 +225,12 @@ export function RightPanel(): React.JSX.Element {
 
       // Get the height of panels below the one we're resizing against
       const belowHeight =
-        (nextPanel === "files" && (agentsOpen || skillsOpen)
+        nextPanel === "files" && (agentsOpen || skillsOpen)
           ? (agentsOpen ? (agentsHeight ?? available / 4) : 0) +
             (skillsOpen ? (skillsHeight ?? available / 4) : 0)
           : nextPanel === "agents" && skillsOpen
             ? (skillsHeight ?? available / 4)
-            : 0)
+            : 0
 
       const maxForTwo = available - belowHeight
       if (newTasksHeight + newOtherHeight > maxForTwo) {
@@ -252,7 +257,15 @@ export function RightPanel(): React.JSX.Element {
         else if (nextPanel === "skills") setSkillsOpen(false)
       }
     },
-    [getContentHeights, getAvailableContentHeight, filesOpen, agentsOpen, skillsOpen, agentsHeight, skillsHeight]
+    [
+      getContentHeights,
+      getAvailableContentHeight,
+      filesOpen,
+      agentsOpen,
+      skillsOpen,
+      agentsHeight,
+      skillsHeight
+    ]
   )
 
   // Handle resize between files and agents/skills
@@ -417,7 +430,9 @@ export function RightPanel(): React.JSX.Element {
       </div>
 
       {/* Resize handle after TASKS */}
-      {tasksOpen && (filesOpen || agentsOpen || skillsOpen) && <ResizeHandle onDrag={handleTasksResize} />}
+      {tasksOpen && (filesOpen || agentsOpen || skillsOpen) && (
+        <ResizeHandle onDrag={handleTasksResize} />
+      )}
 
       {/* FILES */}
       <div className="flex flex-col shrink-0 border-b border-border">

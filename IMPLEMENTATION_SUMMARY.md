@@ -7,6 +7,7 @@
 ## 实现的功能
 
 ### ✅ 核心功能
+
 - [x] 支持配置自定义 Base URL
 - [x] 支持配置自定义 API Key
 - [x] 支持配置可选的 Model Name
@@ -17,6 +18,7 @@
 - [x] 支持更新配置
 
 ### ✅ UI 界面
+
 - [x] ApiKeyDialog 快速配置对话框（推荐）
 - [x] SettingsDialog 完整设置界面
 - [x] 配置状态指示器（Configured/Unsaved/Not set）
@@ -24,6 +26,7 @@
 - [x] 字段验证和禁用逻辑
 
 ### ✅ 后端支持
+
 - [x] 存储层实现（storage.ts）
 - [x] IPC 通信层（models.ts）
 - [x] Agent Runtime 集成（runtime.ts）
@@ -32,22 +35,26 @@
 ## 修改的文件清单
 
 ### 类型定义（4 个文件）
+
 1. `src/main/types.ts` - 添加 CustomApiConfig 接口
 2. `src/renderer/src/types.ts` - 添加 CustomApiConfig 接口
 3. `src/preload/index.d.ts` - 添加 API 方法类型定义
 4. `src/types.ts` - 保持不变
 
 ### 后端实现（3 个文件）
+
 5. `src/main/storage.ts` - 实现配置读写删除
 6. `src/main/ipc/models.ts` - 添加 IPC 处理器
 7. `src/main/agent/runtime.ts` - 集成自定义 API
 
 ### 前端实现（3 个文件）
+
 8. `src/preload/index.ts` - 暴露 IPC 方法
 9. `src/renderer/src/components/chat/ApiKeyDialog.tsx` - 快速配置对话框
 10. `src/renderer/src/components/settings/SettingsDialog.tsx` - 完整设置界面
 
 ### 文档（5 个文件）
+
 11. `README.md` - 更新支持的模型表格
 12. `CUSTOM_API.md` - 详细使用指南
 13. `CHANGES_SUMMARY.md` - 修改总结
@@ -91,6 +98,7 @@
 ## 配置流程
 
 ### 保存配置
+
 ```
 User Input → ApiKeyDialog/SettingsDialog
     ↓
@@ -106,6 +114,7 @@ Set process.env variables
 ```
 
 ### 使用配置
+
 ```
 User selects "Custom API" model
     ↓
@@ -135,6 +144,7 @@ CUSTOM_MODEL=your-model-name  # optional
 ## 兼容性
 
 ### OpenAI 兼容的服务
+
 - ✅ OpenAI 官方 API
 - ✅ Azure OpenAI
 - ✅ vLLM
@@ -144,6 +154,7 @@ CUSTOM_MODEL=your-model-name  # optional
 - ✅ 其他 OpenAI 兼容服务
 
 ### 要求
+
 - API 端点必须兼容 OpenAI Chat Completions API
 - 必须支持流式响应（streaming）
 - 必须使用 HTTPS（推荐）
@@ -158,16 +169,19 @@ CUSTOM_MODEL=your-model-name  # optional
 ## 用户体验
 
 ### 配置方式优先级
+
 1. **推荐**: ApiKeyDialog 快速配置（简单快捷）
 2. **备选**: SettingsDialog 完整设置（功能完整）
 3. **高级**: 手动编辑 .env 文件（灵活性高）
 
 ### 状态指示
+
 - 🟢 **Configured**: 已配置并保存
 - 🟡 **Unsaved**: 有修改但未保存
 - ⚪ **Not set**: 未配置
 
 ### 验证规则
+
 - Base URL: 必填（仅 Custom API）
 - API Key: 必填（所有 providers）
 - Model Name: 可选（仅 Custom API）
@@ -175,6 +189,7 @@ CUSTOM_MODEL=your-model-name  # optional
 ## 测试要点
 
 ### 功能测试
+
 - [ ] 通过 ApiKeyDialog 配置自定义 API
 - [ ] 通过 SettingsDialog 配置自定义 API
 - [ ] 通过 .env 文件配置自定义 API
@@ -184,6 +199,7 @@ CUSTOM_MODEL=your-model-name  # optional
 - [ ] 验证请求发送到自定义端点
 
 ### UI 测试
+
 - [ ] Base URL 字段显示正确
 - [ ] API Key 显示/隐藏切换正常
 - [ ] Model Name 字段可选
@@ -192,6 +208,7 @@ CUSTOM_MODEL=your-model-name  # optional
 - [ ] 删除按钮显示和功能正常
 
 ### 集成测试
+
 - [ ] 与 Anthropic API 不冲突
 - [ ] 与 OpenAI API 不冲突
 - [ ] 与 Google API 不冲突

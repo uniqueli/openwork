@@ -5,12 +5,7 @@ import { SKILL_TEMPLATES, renderTemplate } from "./skill-templates"
 interface CreateSkillDialogProps {
   open: boolean
   onClose: () => void
-  onCreate: (skill: {
-    name: string
-    description: string
-    category: string
-    prompt: string
-  }) => void
+  onCreate: (skill: { name: string; description: string; category: string; prompt: string }) => void
 }
 
 const categories: { value: SkillCategory; label: string; description: string }[] = [
@@ -62,9 +57,10 @@ export function CreateSkillDialog({ open, onClose, onCreate }: CreateSkillDialog
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
-    const finalPrompt = mode === "template" && selectedTemplate
-      ? renderTemplate(SKILL_TEMPLATES.find(t => t.id === selectedTemplate)!, templateValues)
-      : prompt
+    const finalPrompt =
+      mode === "template" && selectedTemplate
+        ? renderTemplate(SKILL_TEMPLATES.find((t) => t.id === selectedTemplate)!, templateValues)
+        : prompt
 
     if (!name.trim() || !description.trim() || !finalPrompt.trim()) {
       return
@@ -93,23 +89,25 @@ export function CreateSkillDialog({ open, onClose, onCreate }: CreateSkillDialog
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="w-full max-w-3xl mx-4 bg-[#1A1A1D] rounded-lg shadow-xl border border-white/10">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="w-full max-w-2xl bg-[#1A1A1D] rounded-lg shadow-xl border border-white/10 flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/5">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 flex-shrink-0">
           <h2 className="text-lg font-semibold text-white">Create Custom Skill</h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-white transition-colors"
-          >
+          <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
         </div>
 
         {/* Mode Toggle */}
-        <div className="flex items-center gap-2 px-6 py-3 border-b border-white/5">
+        <div className="flex items-center gap-2 px-6 py-3 border-b border-white/5 flex-shrink-0">
           <button
             type="button"
             onClick={() => setMode("custom")}
@@ -134,12 +132,14 @@ export function CreateSkillDialog({ open, onClose, onCreate }: CreateSkillDialog
           </button>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        {/* Form - Scrollable */}
+        <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto flex-1">
           {mode === "template" && (
             /* Template Selection */
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Choose Template</label>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Choose Template
+              </label>
               <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
                 {SKILL_TEMPLATES.map((template) => (
                   <button
@@ -161,27 +161,32 @@ export function CreateSkillDialog({ open, onClose, onCreate }: CreateSkillDialog
           )}
 
           {/* Template Variables */}
-          {mode === "template" && currentTemplate && currentTemplate.variables && currentTemplate.variables.length > 0 && (
-            <div className="space-y-3 p-4 bg-white/5 rounded-lg border border-white/10">
-              <h4 className="text-sm font-medium text-white">Customize Template</h4>
-              {currentTemplate.variables.map((variable) => (
-                <div key={variable.name}>
-                  <label className="block text-sm text-gray-300 mb-1">
-                    {variable.label}
-                    {variable.required && <span className="text-red-500"> *</span>}
-                  </label>
-                  <input
-                    type="text"
-                    value={templateValues[variable.name] || ""}
-                    onChange={(e) => setTemplateValues({ ...templateValues, [variable.name]: e.target.value })}
-                    placeholder={variable.placeholder}
-                    className="w-full px-3 py-2 text-sm text-white placeholder-gray-500 bg-white/5 border border-white/10 rounded-md focus:outline-none focus:border-blue-500"
-                    required={variable.required}
-                  />
-                </div>
-              ))}
-            </div>
-          )}
+          {mode === "template" &&
+            currentTemplate &&
+            currentTemplate.variables &&
+            currentTemplate.variables.length > 0 && (
+              <div className="space-y-3 p-4 bg-white/5 rounded-lg border border-white/10">
+                <h4 className="text-sm font-medium text-white">Customize Template</h4>
+                {currentTemplate.variables.map((variable) => (
+                  <div key={variable.name}>
+                    <label className="block text-sm text-gray-300 mb-1">
+                      {variable.label}
+                      {variable.required && <span className="text-red-500"> *</span>}
+                    </label>
+                    <input
+                      type="text"
+                      value={templateValues[variable.name] || ""}
+                      onChange={(e) =>
+                        setTemplateValues({ ...templateValues, [variable.name]: e.target.value })
+                      }
+                      placeholder={variable.placeholder}
+                      className="w-full px-3 py-2 text-sm text-white placeholder-gray-500 bg-white/5 border border-white/10 rounded-md focus:outline-none focus:border-blue-500"
+                      required={variable.required}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
 
           {/* Name */}
           <div>
@@ -255,7 +260,7 @@ export function CreateSkillDialog({ open, onClose, onCreate }: CreateSkillDialog
           </div>
 
           {/* Actions */}
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-white/5">
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-white/5 flex-shrink-0">
             <button
               type="button"
               onClick={onClose}

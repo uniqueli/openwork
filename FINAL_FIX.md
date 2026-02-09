@@ -5,22 +5,26 @@
 即使用户在 UI 中选择了 "custom" 模型，系统仍然使用 Claude 模型。原因有三个：
 
 ### 1. 模型选择没有持久化到后端
+
 - `setCurrentModel` 只更新前端 state
 - 没有保存到 thread metadata
 - 重新加载时丢失选择
 
 ### 2. Agent 创建时没有使用选择的模型
+
 - `createAgentRuntime` 接受 `modelId` 参数
 - 但 `agent.ts` 调用时没有传递
 - 总是使用默认的 Claude 模型
 
 ### 3. ModelSwitcher 缺少 Custom API 支持
+
 - `PROVIDER_ICONS` 没有 custom 图标
 - `FALLBACK_PROVIDERS` 没有 custom provider
 
 ## ✅ 已修复的文件
 
 ### 1. `src/main/ipc/agent.ts`
+
 **修改**: 从 thread metadata 中读取 `currentModel` 并传递给 `createAgentRuntime`
 
 ```typescript
@@ -29,19 +33,21 @@ const agent = await createAgentRuntime({ threadId, workspacePath })
 
 // 修改后
 const currentModel = metadata.currentModel as string | undefined
-const agent = await createAgentRuntime({ 
-  threadId, 
+const agent = await createAgentRuntime({
+  threadId,
   workspacePath,
-  modelId: currentModel 
+  modelId: currentModel
 })
 ```
 
 **影响**: 3 处调用点
+
 - `agent:invoke` - 发送新消息
 - `agent:resume` - 恢复中断的对话
 - `agent:interrupt` - 处理 HITL 决策
 
 ### 2. `src/renderer/src/lib/thread-context.tsx`
+
 **修改 A**: `setCurrentModel` 持久化到 thread metadata
 
 ```typescript
@@ -72,6 +78,7 @@ if (thread?.metadata) {
 ```
 
 ### 3. `src/renderer/src/components/chat/ModelSwitcher.tsx`
+
 **修改 A**: 添加 Custom Icon
 
 ```typescript
@@ -94,7 +101,7 @@ const PROVIDER_ICONS: Record<ProviderId, React.FC<{ className?: string }>> = {
   openai: OpenAIIcon,
   google: GoogleIcon,
   ollama: () => null,
-  custom: CustomIcon  // 新增
+  custom: CustomIcon // 新增
 }
 ```
 
@@ -102,16 +109,17 @@ const PROVIDER_ICONS: Record<ProviderId, React.FC<{ className?: string }>> = {
 
 ```typescript
 const FALLBACK_PROVIDERS: Provider[] = [
-  { id: 'anthropic', name: 'Anthropic', hasApiKey: false },
-  { id: 'openai', name: 'OpenAI', hasApiKey: false },
-  { id: 'google', name: 'Google', hasApiKey: false },
-  { id: 'custom', name: 'Custom API', hasApiKey: false }  // 新增
+  { id: "anthropic", name: "Anthropic", hasApiKey: false },
+  { id: "openai", name: "OpenAI", hasApiKey: false },
+  { id: "google", name: "Google", hasApiKey: false },
+  { id: "custom", name: "Custom API", hasApiKey: false } // 新增
 ]
 ```
 
 ## 🔄 工作流程
 
 ### 修复前
+
 ```
 用户选择 custom → 前端 state 更新 → 发送消息
                                     ↓
@@ -121,6 +129,7 @@ const FALLBACK_PROVIDERS: Provider[] = [
 ```
 
 ### 修复后
+
 ```
 用户选择 custom → 前端 state 更新 → 持久化到 metadata
                                     ↓
@@ -134,6 +143,7 @@ const FALLBACK_PROVIDERS: Provider[] = [
 ## 🚀 使用步骤
 
 ### 1. 重新构建应用
+
 ```bash
 cd openwork
 npm run build
@@ -141,6 +151,7 @@ npm run dev
 ```
 
 ### 2. 配置 Custom API（如果还没配置）
+
 ```bash
 # 检查配置
 cat ~/.openwork/.env | grep CUSTOM
@@ -152,12 +163,14 @@ CUSTOM_MODEL=glm-4.7
 ```
 
 ### 3. 选择 Custom API 模型
+
 1. 点击模型选择器
 2. 左侧选择 "Custom API"
 3. 右侧选择 "custom"
 4. 确认显示 "📦 custom"
 
 ### 4. 发送消息测试
+
 打开开发者工具（Cmd/Ctrl + Shift + I），应该看到：
 
 ```
@@ -186,6 +199,7 @@ CUSTOM_MODEL=glm-4.7
 ## 📝 技术细节
 
 ### Thread Metadata 结构
+
 ```json
 {
   "workspacePath": "/path/to/workspace",
@@ -194,6 +208,7 @@ CUSTOM_MODEL=glm-4.7
 ```
 
 ### Agent 创建流程
+
 ```typescript
 // 1. 从 metadata 读取
 const metadata = JSON.parse(thread.metadata)
@@ -203,11 +218,11 @@ const currentModel = metadata.currentModel
 const agent = await createAgentRuntime({
   threadId,
   workspacePath,
-  modelId: currentModel  // 使用选择的模型
+  modelId: currentModel // 使用选择的模型
 })
 
 // 3. Runtime 判断
-if (model === 'custom') {
+if (model === "custom") {
   // 使用自定义 API
   const customConfig = getCustomApiConfig()
   return new ChatOpenAI({
@@ -221,6 +236,7 @@ if (model === 'custom') {
 ## 🎉 完成！
 
 所有问题已修复！现在：
+
 - ✅ 模型选择会持久化
 - ✅ Agent 使用正确的模型
 - ✅ Custom API 完全可用

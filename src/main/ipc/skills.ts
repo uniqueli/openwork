@@ -15,6 +15,12 @@ import {
 } from "../storage"
 import type { Skill } from "../types"
 import { syncEnabledSkills } from "../agent/skills/skill-file-manager"
+import { validateSkillData, sanitizePrompt } from "../agent/skills/validation"
+import {
+  SKILL_ERRORS,
+  wrapSkillError,
+  parseValidationError
+} from "../agent/skills/error-handler"
 
 // =============================================================================
 // Skills IPC Parameter Types
@@ -36,6 +42,7 @@ export interface SkillCreateParams {
   category: string
   prompt: string
   subSkills?: string[]
+  version?: string // Optional version, defaults to "1.0.0"
 }
 
 export interface SkillUpdateParams {
@@ -153,12 +160,34 @@ export function registerSkillsHandlers(ipcMain: IpcMain): void {
     console.log("[Skills] Create request:", params.name)
 
     try {
+      // Validate input data
+      const validation = validateSkillData({
+        name: params.name,
+        description: params.description,
+        category: params.category,
+        prompt: params.prompt,
+        subSkills: params.subSkills
+      })
+
+      if (!validation.valid) {
+        event.reply("skills:create:result", {
+          success: false,
+          error: validation.error || "Validation failed",
+          field: validation.field
+        })
+        return
+      }
+
+      // Sanitize prompt
+      const sanitizedPrompt = sanitizePrompt(params.prompt)
+
       const skill = createUserSkill(
         params.name,
         params.description,
         params.category,
-        params.prompt,
-        params.subSkills
+        sanitizedPrompt,
+        params.subSkills,
+        params.version
       )
 
       saveUserSkill(skill)
@@ -185,9 +214,12 @@ export function registerSkillsHandlers(ipcMain: IpcMain): void {
       const existing = loader.getSkill(params.skillId)
 
       if (!existing) {
+        const skillError = SKILL_ERRORS.SKILL_NOT_FOUND(params.skillId)
         event.reply("skills:update:result", {
           success: false,
-          error: `Skill not found: ${params.skillId}`
+          error: skillError.message,
+          details: skillError.details,
+          recovery: skillError.recovery
         })
         return
       }
@@ -195,18 +227,43 @@ export function registerSkillsHandlers(ipcMain: IpcMain): void {
       if (existing.isBuiltin) {
         event.reply("skills:update:result", {
           success: false,
-          error: "Cannot modify built-in skills"
+          error: SKILL_ERRORS.CANNOT_MODIFY_BUILTIN.message,
+          details: SKILL_ERRORS.CANNOT_MODIFY_BUILTIN.details,
+          recovery: SKILL_ERRORS.CANNOT_MODIFY_BUILTIN.recovery
         })
         return
       }
 
-      // Update skill with new values
+      // Build updated skill data for validation
+      const updatedData = {
+        name: params.name || existing.name,
+        description: params.description || existing.description,
+        category: params.category || existing.category,
+        prompt: params.prompt || existing.prompt,
+        subSkills: params.subSkills !== undefined ? params.subSkills : existing.subSkills
+      }
+
+      // Validate updated data
+      const validation = validateSkillData(updatedData)
+      if (!validation.valid) {
+        const error = parseValidationError(validation.error)
+        event.reply("skills:update:result", {
+          success: false,
+          error: error.message,
+          field: error.field,
+          details: error.details,
+          recovery: error.recovery
+        })
+        return
+      }
+
+      // Update skill with new values (sanitizing prompt if provided)
       const updated: Skill = {
         ...existing,
         ...(params.name && { name: params.name }),
         ...(params.description && { description: params.description }),
-        ...(params.category && { category: params.category as any }),
-        ...(params.prompt && { prompt: params.prompt }),
+        ...(params.category && { category: params.category as Skill["category"] }),
+        ...(params.prompt && { prompt: sanitizePrompt(params.prompt) }),
         ...(params.subSkills && { subSkills: params.subSkills }),
         updatedAt: new Date()
       }
@@ -219,9 +276,12 @@ export function registerSkillsHandlers(ipcMain: IpcMain): void {
       })
     } catch (error) {
       console.error("[Skills] Update error:", error)
+      const wrappedError = wrapSkillError(error, "更新技能失败")
       event.reply("skills:update:result", {
         success: false,
-        error: error instanceof Error ? error.message : "Unknown error"
+        error: wrappedError.message,
+        details: wrappedError.details,
+        recovery: wrappedError.recovery
       })
     }
   })
@@ -265,15 +325,15 @@ export function registerSkillsHandlers(ipcMain: IpcMain): void {
   })
 
   // Toggle skill enabled state
-  ipcMain.on("skills:toggle", (event, { skillId, enabled }: SkillToggleParams) => {
+  ipcMain.on("skills:toggle", async (event, { skillId, enabled }: SkillToggleParams) => {
     console.log("[Skills] Toggle request:", skillId, enabled)
 
     try {
       toggleSkillEnabled(skillId, enabled)
 
-      // Sync to skill files
+      // Sync to skill files (now async)
       const enabledIds = getEnabledSkillIds()
-      syncEnabledSkills(enabledIds)
+      await syncEnabledSkills(enabledIds)
 
       event.reply("skills:toggle:result", {
         success: true,
@@ -289,14 +349,14 @@ export function registerSkillsHandlers(ipcMain: IpcMain): void {
   })
 
   // Set enabled skills
-  ipcMain.on("skills:setEnabled", (event, { skillIds }: SkillsSetEnabledParams) => {
+  ipcMain.on("skills:setEnabled", async (event, { skillIds }: SkillsSetEnabledParams) => {
     console.log("[Skills] Set enabled request:", skillIds)
 
     try {
       setEnabledSkillIds(skillIds)
 
-      // Sync to skill files
-      syncEnabledSkills(skillIds)
+      // Sync to skill files (now async)
+      await syncEnabledSkills(skillIds)
 
       event.reply("skills:setEnabled:result", {
         success: true,
@@ -399,42 +459,79 @@ export function registerSkillsHandlers(ipcMain: IpcMain): void {
   })
 
   // Import skills
-  ipcMain.on("skills:import", (event, { data }: { data: { skills: Array<Omit<Skill, "enabled" | "isBuiltin" | "createdAt" | "updatedAt">> } }) => {
-    console.log("[Skills] Import request:", data.skills.length, "skills")
+  ipcMain.on(
+    "skills:import",
+    (
+      event,
+      {
+        data
+      }: {
+        data: { skills: Array<Omit<Skill, "enabled" | "isBuiltin" | "createdAt" | "updatedAt">> }
+      }
+    ) => {
+      console.log("[Skills] Import request:", data.skills.length, "skills")
 
-    try {
-      const imported: Skill[] = []
+      try {
+        const imported: Skill[] = []
+        const errors: Array<{ index: number; skill: string; error: string }> = []
 
-      for (const skillData of data.skills) {
-        // Create new skill with generated ID
-        const skill: Skill = {
-          ...skillData,
-          id: `imported-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          enabled: false,
-          isBuiltin: false,
-          createdAt: new Date(),
-          updatedAt: new Date()
+        for (let i = 0; i < data.skills.length; i++) {
+          const skillData = data.skills[i]
+
+          // Validate imported skill
+          const validation = validateSkillData({
+            name: skillData.name,
+            description: skillData.description,
+            category: skillData.category,
+            prompt: skillData.prompt,
+            subSkills: skillData.subSkills
+          })
+
+          if (!validation.valid) {
+            errors.push({
+              index: i,
+              skill: skillData.name,
+              error: validation.error || "Validation failed"
+            })
+            continue
+          }
+
+          // Create new skill with generated ID
+          const skill: Skill = {
+            ...skillData,
+            id: `imported-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            prompt: sanitizePrompt(skillData.prompt), // Sanitize prompt
+            enabled: false,
+            isBuiltin: false,
+            createdAt: new Date(),
+            updatedAt: new Date()
+          }
+
+          saveUserSkill(skill)
+          imported.push(skill)
         }
 
-        saveUserSkill(skill)
-        imported.push(skill)
+        // Refresh skill loader
+        getSkillLoader().refresh()
+
+        // Return result with any validation errors
+        event.reply("skills:import:result", {
+          success: true,
+          imported: imported.map((s) => ({ id: s.id, name: s.name })),
+          total: data.skills.length,
+          importedCount: imported.length,
+          errorCount: errors.length,
+          errors: errors.length > 0 ? errors : undefined
+        })
+      } catch (error) {
+        console.error("[Skills] Import error:", error)
+        event.reply("skills:import:result", {
+          success: false,
+          error: error instanceof Error ? error.message : "Unknown error"
+        })
       }
-
-      // Refresh skill loader
-      getSkillLoader().refresh()
-
-      event.reply("skills:import:result", {
-        success: true,
-        imported: imported.map((s) => ({ id: s.id, name: s.name }))
-      })
-    } catch (error) {
-      console.error("[Skills] Import error:", error)
-      event.reply("skills:import:result", {
-        success: false,
-        error: error instanceof Error ? error.message : "Unknown error"
-      })
     }
-  })
+  )
 
   // Get skill statistics
   ipcMain.on("skills:getStats", (event) => {
@@ -452,10 +549,13 @@ export function registerSkillsHandlers(ipcMain: IpcMain): void {
         builtin: allSkills.filter((s) => s.isBuiltin).length,
         user: allSkills.filter((s) => !s.isBuiltin).length,
         enabled: enabledIds.length,
-        byCategory: allSkills.reduce((acc, skill) => {
-          acc[skill.category] = (acc[skill.category] || 0) + 1
-          return acc
-        }, {} as Record<string, number>),
+        byCategory: allSkills.reduce(
+          (acc, skill) => {
+            acc[skill.category] = (acc[skill.category] || 0) + 1
+            return acc
+          },
+          {} as Record<string, number>
+        ),
         mostUsed: Object.values(usageStats)
           .sort((a, b) => b.count - a.count)
           .slice(0, 5)
@@ -499,6 +599,47 @@ export function registerSkillsHandlers(ipcMain: IpcMain): void {
     } catch (error) {
       console.error("[Skills] Get usage error:", error)
       event.reply("skills:getUsage:result", {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error"
+      })
+    }
+  })
+
+  // Get cache statistics
+  ipcMain.on("skills:getCacheStats", (event) => {
+    console.log("[Skills] Get cache stats request")
+
+    try {
+      const loader = getSkillLoader()
+      const stats = loader.getCacheStats()
+
+      event.reply("skills:getCacheStats:result", {
+        success: true,
+        stats
+      })
+    } catch (error) {
+      console.error("[Skills] Get cache stats error:", error)
+      event.reply("skills:getCacheStats:result", {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error"
+      })
+    }
+  })
+
+  // Clear cache
+  ipcMain.on("skills:clearCache", (event) => {
+    console.log("[Skills] Clear cache request")
+
+    try {
+      const loader = getSkillLoader()
+      loader.clearCache()
+
+      event.reply("skills:clearCache:result", {
+        success: true
+      })
+    } catch (error) {
+      console.error("[Skills] Clear cache error:", error)
+      event.reply("skills:clearCache:result", {
         success: false,
         error: error instanceof Error ? error.message : "Unknown error"
       })
