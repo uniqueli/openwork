@@ -5,8 +5,10 @@ import type {
   StreamEvent,
   HITLDecision,
   Skill,
-  SkillsConfig
+  SkillsConfig,
+  MCPClientState
 } from "../main/types"
+import type { MCPServerConfigStorage } from "../main/storage"
 
 interface ElectronAPI {
   ipcRenderer: {
@@ -222,6 +224,148 @@ interface CustomAPI {
     getUsage: (skillId: string) => Promise<{
       success: boolean
       usage?: { skillId: string; count: number; lastUsed: string }
+      error?: string
+    }>
+  }
+  mcp: {
+    list: (params?: {
+      enabledOnly?: boolean
+    }) => Promise<{
+      success: boolean
+      servers?: MCPServerConfigStorage[]
+      error?: string
+    }>
+    get: (
+      serverId: string
+    ) => Promise<{
+      success: boolean
+      server?: MCPServerConfigStorage
+      error?: string
+    }>
+    create: (params: {
+      id: string
+      name: string
+      type: "stdio" | "sse"
+      command?: string
+      args?: string[]
+      url?: string
+      env?: Record<string, string>
+      enabled?: boolean
+      description?: string
+      icon?: string
+      category?: string
+    }) => Promise<{
+      success: boolean
+      server?: MCPServerConfigStorage
+      error?: string
+    }>
+    update: (params: {
+      serverId: string
+      name?: string
+      type?: "stdio" | "sse"
+      command?: string
+      args?: string[]
+      url?: string
+      env?: Record<string, string>
+      enabled?: boolean
+      description?: string
+      icon?: string
+      category?: string
+    }) => Promise<{
+      success: boolean
+      server?: MCPServerConfigStorage
+      error?: string
+    }>
+    delete: (
+      serverId: string
+    ) => Promise<{
+      success: boolean
+      error?: string
+    }>
+    toggle: (
+      serverId: string,
+      enabled: boolean
+    ) => Promise<{
+      success: boolean
+      enabled?: boolean
+      error?: string
+    }>
+    connect: (
+      serverId: string
+    ) => Promise<{
+      success: boolean
+      state?: MCPClientState
+      error?: string
+    }>
+    disconnect: (
+      serverId: string
+    ) => Promise<{
+      success: boolean
+      error?: string
+    }>
+    getState: (
+      serverId: string
+    ) => Promise<{
+      success: boolean
+      state?: MCPClientState
+      error?: string
+    }>
+    getAllStates: () => Promise<{
+      success: boolean
+      states?: MCPClientState[]
+      error?: string
+    }>
+    test: (params: {
+      type: "stdio" | "sse"
+      command?: string
+      args?: string[]
+      url?: string
+      env?: Record<string, string>
+    }) => Promise<{
+      success: boolean
+      tools?: number
+      error?: string
+    }>
+    export: () => Promise<{
+      success: boolean
+      data?: {
+        version: string
+        exportedAt: string
+        servers: Array<{
+          id: string
+          name: string
+          type: "stdio" | "sse"
+          command?: string
+          args?: string[]
+          url?: string
+          enabled: boolean
+          description?: string
+          icon?: string
+          category?: string
+        }>
+      }
+      error?: string
+    }>
+    import: (data: {
+      servers: Array<{
+        id: string
+        name: string
+        type: "stdio" | "sse"
+        command?: string
+        args?: string[]
+        url?: string
+        enabled: boolean
+        description?: string
+        icon?: string
+        category?: string
+      }>
+    }) => Promise<{
+      success: boolean
+      imported?: Array<{ id: string; name: string }>
+      total?: number
+      importedCount?: number
+      errorCount?: number
+      errors?: Array<{ index: number; server: string; error: string }>
       error?: string
     }>
   }

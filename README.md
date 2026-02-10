@@ -9,7 +9,7 @@
 
 A desktop interface for [deepagentsjs](https://github.com/langchain-ai/deepagentsjs) — an opinionated harness for building deep agents with filesystem capabilities, planning, and subagent delegation.
 
-**✨ Enhanced with Multiple Custom API Support** - Add unlimited OpenAI-compatible API providers with a single click!
+**✨ Enhanced with Multiple Custom API Support + MCP Integration** - Add unlimited OpenAI-compatible API providers and MCP servers with a single click!
 
 ![openwork screenshot](docs/screenshot.png)
 
@@ -111,7 +111,129 @@ CUSTOM_API_KEY=your-api-key
 CUSTOM_MODEL=your-model-name  # optional
 ```
 
+## 🔌 MCP Server Integration
+
+**New in v0.4.0**: Full support for Model Context Protocol (MCP) servers!
+
+### What is MCP?
+
+MCP (Model Context Protocol) is an open protocol that allows AI assistants to securely connect to external data sources and tools. With MCP, your agent can:
+
+- Access API documentation (YAPI, Swagger, etc.)
+- Query databases
+- Search the web
+- Interact with file systems
+- And much more!
+
+### How to Add MCP Servers
+
+1. Open the right panel in openwork
+2. Click the **"MCP"** section to expand it
+3. Click the **"+ 添加"** button
+4. Fill in the form:
+   - **传输类型**: STDIO (local process) or SSE (HTTP endpoint)
+   - **服务器ID**: Unique identifier (e.g., `yapi-devloper-mcp`)
+   - **显示名称**: Name shown in UI (e.g., `YAPI开发助手`)
+   - **命令** (STDIO only): Command to run (e.g., `npx`)
+   - **命令参数** (STDIO only): Arguments (e.g., `-y yapi-devloper-mcp@latest --stdio`)
+   - **环境变量**: Optional key-value pairs for sensitive data (API keys, etc.)
+   - **分类**: Choose a category for better organization
+5. Click **"测试连接"** to verify the configuration
+6. Click **"创建服务器"** to save
+
+### Example Configurations
+
+**YAPI Developer MCP**
+
+```
+ID: yapi-devloper-mcp
+Name: YAPI开发助手
+Type: STDIO
+Command: npx
+Args: -y yapi-devloper-mcp@latest --stdio
+Environment Variables:
+  YAPI_BASE_URL: https://yapi.jiaoyanyun.com
+  YAPI_USERNAME: your-username
+  YAPI_PASSWORD: your-password
+Category: API
+```
+
+**Context7 (Vector Context Service)**
+
+```
+ID: context7
+Name: Context7
+Type: STDIO
+Command: npx
+Args: -y @upstash/context7-mcp@latest
+Category: Custom
+```
+
+**Filesystem MCP**
+
+```
+ID: filesystem
+Name: 文件系统
+Type: STDIO
+Command: npx
+Args: -y @modelcontextprotocol/server-filesystem /path/to/allowed/directory
+Category: Filesystem
+```
+
+**GitHub MCP**
+
+```
+ID: github
+Name: GitHub
+Type: STDIO
+Command: npx
+Args: -y @modelcontextprotocol/server-github
+Environment Variables:
+  GITHUB_PERSONAL_ACCESS_TOKEN: ghp_xxxxxxxxxxxx
+Category: Development
+```
+
+**Brave Search MCP**
+
+```
+ID: brave-search
+Name: Brave搜索
+Type: SSE
+URL: https://sse.brave.search
+Environment Variables:
+  BRAVE_API_KEY: your-brave-api-key
+Category: Productivity
+```
+
+### Using MCP Tools
+
+Once connected, MCP tools are automatically available to your agent:
+
+- Tools are discovered and loaded automatically
+- Each server shows its connection status and tool count
+- Tools appear as regular LangChain tools in the agent's toolkit
+- Disconnect or disable servers to temporarily stop using their tools
+
+### Managing MCP Servers
+
+- **Connect/Disconnect**: Click the plug icon to connect/disconnect
+- **Enable/Disable**: Click the power icon to enable/disable a server
+- **Delete**: Click the trash icon to permanently remove a server
+- **View Status**: See real-time connection status (Connected/Connecting/Error/Disconnected)
+
 ## Changelog
+
+### v0.4.0 (2026-02-10)
+
+- 🔌 **MCP Integration**: 新增Model Context Protocol (MCP) 完整支持
+  - 支持STDIO和SSE两种传输方式
+  - 可视化MCP服务器管理界面（右侧面板新增MCP分区）
+  - 支持环境变量配置（用于API密钥等敏感信息）
+  - 自动将MCP工具转换为LangChain工具
+  - Agent运行时自动加载已连接的MCP工具
+  - 实时显示连接状态和工具数量
+  - 支持测试连接功能
+  - 已测试：YAPI Developer MCP、Context7等
 
 ### v0.3.0 (2026-02-09)
 

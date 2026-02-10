@@ -5,6 +5,77 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-02-10
+
+### 🚀 MCP Integration - Model Context Protocol 集成
+
+#### New Features - 新功能
+- 🔌 **MCP Server Support**: 完整的MCP服务器支持
+  - 支持STDIO和SSE两种传输方式
+  - 可视化MCP服务器管理界面（右侧面板新增MCP分区）
+  - 支持连接/断开、启用/禁用、删除服务器
+  - 实时显示连接状态和工具数量
+  - 支持环境变量配置（用于API密钥等敏感信息）
+
+- 🛠️ **MCP Tool Integration**: MCP工具集成
+  - 自动将MCP服务器提供的工具转换为LangChain工具
+  - Agent运行时自动加载已连接的MCP工具
+  - 支持动态工具发现和加载
+  - JSON Schema到Zod schema自动转换
+
+- 🎨 **User Interface**: 用户界面
+  - MCP服务器创建对话框（支持测试连接）
+  - 服务器卡片展示（状态、类型、工具数等信息）
+  - 环境变量动态配置（键值对输入）
+  - 连接状态轮询（2秒间隔更新）
+  - 乐观UI更新 + 错误提示
+
+#### Technical Details - 技术细节
+
+##### New Dependencies
+- `@langchain/mcp-adapters@^1.1.2`: MCP到LangChain适配器
+- `@modelcontextprotocol/sdk@^1.26.0`: MCP官方SDK
+
+##### New Files
+- `src/main/types.ts`: Added MCP type definitions (MCPServerConfig, MCPTool, MCPClientState, etc.)
+- `src/main/storage.ts`: Added MCP configuration storage functions
+- `src/main/agent/mcp/mcp-manager.ts`: MCP客户端管理器（连接、工具转换等）
+- `src/main/ipc/mcp.ts`: MCP IPC处理器
+- `src/renderer/src/components/mcp/mcp-panel.tsx`: MCP管理面板
+- `src/renderer/src/components/mcp/create-mcp-server-dialog.tsx`: MCP服务器创建对话框
+
+##### Modified Files
+- `src/main/index.ts`: 注册MCP IPC handlers
+- `src/preload/index.ts`: 暴露MCP API到renderer进程
+- `src/main/agent/runtime.ts`: 集成MCP工具加载
+- `src/renderer/src/components/panels/RightPanel.tsx`: 添加MCP分区
+
+#### Supported MCP Servers
+- ✅ **YAPI Developer MCP**: YAPI接口文档助手（已测试）
+- ✅ **Context7**: 向量上下文服务（已测试）
+- ✅ **Filesystem MCP**: 文件系统操作
+- ✅ **GitHub MCP**: GitHub集成
+- ✅ **Brave Search MCP**: 网页搜索
+- 其他标准MCP服务器...
+
+#### Usage Example - 使用示例
+```json
+{
+  "id": "yapi-devloper-mcp",
+  "name": "YAPI开发助手",
+  "type": "stdio",
+  "command": "npx",
+  "args": ["-y", "yapi-devloper-mcp@latest", "--stdio"],
+  "env": {
+    "YAPI_BASE_URL": "https://yapi.example.com",
+    "YAPI_USERNAME": "username",
+    "YAPI_PASSWORD": "password"
+  },
+  "enabled": true,
+  "category": "api"
+}
+```
+
 ## [0.3.0] - 2026-02-09
 
 ### 🚀 Skills System Major Upgrade - 技能系统重大升级

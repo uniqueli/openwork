@@ -454,3 +454,113 @@ export function getSkillUsageStats(skillId: string): SkillUsageStats | undefined
   const stats = loadSkillUsageStats()
   return stats[skillId]
 }
+
+// =============================================================================
+// MCP (Model Context Protocol) storage
+// =============================================================================
+
+export function getMCPConfigPath(): string {
+  return join(getOpenworkDir(), "mcp-config.json")
+}
+
+export interface MCPServerConfigStorage {
+  id: string
+  name: string
+  type: "stdio" | "sse"
+  command?: string
+  args?: string[]
+  url?: string
+  env?: Record<string, string>
+  enabled: boolean
+  description?: string
+  icon?: string
+  category?: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface MCPConfigStorage {
+  servers: MCPServerConfigStorage[]
+  autoConnect: boolean
+  timeout: number
+}
+
+export function loadMCPConfig(): MCPConfigStorage {
+  const configPath = getMCPConfigPath()
+  if (!existsSync(configPath)) {
+    // Return default config
+    return {
+      servers: [],
+      autoConnect: false,
+      timeout: 30
+    }
+  }
+
+  try {
+    const content = readFileSync(configPath, "utf-8")
+    return JSON.parse(content)
+  } catch (error) {
+    console.error("[Storage] Failed to load MCP config:", error)
+    return {
+      servers: [],
+      autoConnect: false,
+      timeout: 30
+    }
+  }
+}
+
+export function saveMCPConfig(config: MCPConfigStorage): void {
+  const configPath = getMCPConfigPath()
+  writeFileSync(configPath, JSON.stringify(config, null, 2) + "\n")
+}
+
+export function getMCPServerConfig(serverId: string): MCPServerConfigStorage | undefined {
+  const config = loadMCPConfig()
+  return config.servers.find((s) => s.id === serverId)
+}
+
+export function saveMCPServerConfig(server: MCPServerConfigStorage): void {
+  const config = loadMCPConfig()
+  const existingIndex = config.servers.findIndex((s) => s.id === server.id)
+
+  const now = new Date().toISOString()
+
+  if (existingIndex >= 0) {
+    // Update existing server
+    config.servers[existingIndex] = {
+      ...server,
+      updatedAt: now
+    }
+  } else {
+    // Add new server
+    config.servers.push({
+      ...server,
+      createdAt: now,
+      updatedAt: now
+    })
+  }
+
+  saveMCPConfig(config)
+}
+
+export function deleteMCPServerConfig(serverId: string): void {
+  const config = loadMCPConfig()
+  config.servers = config.servers.filter((s) => s.id !== serverId)
+  saveMCPConfig(config)
+}
+
+export function getEnabledMCPServerConfigs(): MCPServerConfigStorage[] {
+  const config = loadMCPConfig()
+  return config.servers.filter((s) => s.enabled)
+}
+
+export function toggleMCPServerEnabled(serverId: string, enabled: boolean): void {
+  const config = loadMCPConfig()
+  const server = config.servers.find((s) => s.id === serverId)
+
+  if (server) {
+    server.enabled = enabled
+    server.updatedAt = new Date().toISOString()
+    saveMCPConfig(config)
+  }
+}

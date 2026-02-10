@@ -5,7 +5,8 @@ import {
   getApiKey,
   getThreadCheckpointPath,
   getCustomApiConfigs,
-  getEnabledSkillIds
+  getEnabledSkillIds,
+  getEnabledMCPServerConfigs
 } from "../storage"
 import { ChatAnthropic } from "@langchain/anthropic"
 import { ChatOpenAI } from "@langchain/openai"
@@ -13,6 +14,7 @@ import { ChatGoogleGenerativeAI } from "@langchain/google-genai"
 import { SqlJsSaver } from "../checkpointer/sqljs-saver"
 import { LocalSandbox } from "./local-sandbox"
 import { initializeBuiltinSkills, getSkillsFileDir } from "./skills/skill-file-manager"
+import { getMCPManager } from "./mcp/mcp-manager"
 
 import type * as _lcTypes from "langchain"
 import type * as _lcMessages from "@langchain/core/messages"
@@ -32,6 +34,53 @@ function ensureSkillsInitialized(): void {
     initializeBuiltinSkills()
     skillsInitialized = true
   }
+}
+
+/**
+ * Connect to enabled MCP servers and retrieve their tools
+ */
+async function loadMCPTools(): Promise<void> {
+  const enabledServers = getEnabledMCPServerConfigs()
+
+  if (enabledServers.length === 0) {
+    console.log("[Runtime] No enabled MCP servers found")
+    return
+  }
+
+  console.log(`[Runtime] Found ${enabledServers.length} enabled MCP server(s)`)
+
+  const mcpManager = getMCPManager()
+
+  for (const serverConfig of enabledServers) {
+    try {
+      console.log(`[Runtime] Connecting to MCP server: ${serverConfig.name}`)
+
+      // Convert storage format to MCPServerConfig format
+      const config = {
+        id: serverConfig.id,
+        name: serverConfig.name,
+        type: serverConfig.type,
+        command: serverConfig.command,
+        args: serverConfig.args,
+        url: serverConfig.url,
+        env: serverConfig.env,
+        enabled: serverConfig.enabled,
+        description: serverConfig.description,
+        icon: serverConfig.icon,
+        category: serverConfig.category
+      }
+
+      const state = await mcpManager.connectServer(config)
+
+      console.log(`[Runtime] Connected to ${serverConfig.name}, loaded ${state.tools.length} tools`)
+    } catch (error) {
+      console.error(`[Runtime] Failed to connect to MCP server ${serverConfig.name}:`, error)
+    }
+  }
+
+  // Log total tools loaded
+  const allTools = mcpManager.getAllTools()
+  console.log(`[Runtime] Total MCP tools loaded: ${allTools.length}`)
 }
 
 /**
@@ -224,6 +273,9 @@ export async function createAgentRuntime(options: CreateAgentRuntimeOptions) {
   const checkpointer = await getCheckpointer(threadId)
   console.log("[Runtime] Checkpointer ready for thread:", threadId)
 
+  // Load MCP tools from enabled servers
+  await loadMCPTools()
+
   const backend = new LocalSandbox({
     rootDir: workspacePath,
     virtualMode: false, // Use absolute system paths for consistency with shell commands
@@ -254,6 +306,14 @@ export async function createAgentRuntime(options: CreateAgentRuntimeOptions) {
     agentParams.skills = [skillsDir]
     console.log("[Runtime] Skills enabled from:", skillsDir)
     console.log("[Runtime] Enabled skills:", enabledSkillIds.join(", "))
+  }
+
+  // Add MCP tools if available
+  const mcpManager = getMCPManager()
+  const mcpTools = mcpManager.getAllTools()
+  if (mcpTools.length > 0) {
+    agentParams.tools = mcpTools
+    console.log("[Runtime] MCP tools enabled:", mcpTools.length, "tools")
   }
 
   const agent = createDeepAgent(agentParams!)

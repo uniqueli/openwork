@@ -229,3 +229,47 @@ export interface SkillsConfig {
   enabledSkills: string[] // List of enabled skill IDs
   autoLoad: boolean // Whether to auto-load skills on agent start
 }
+
+// =============================================================================
+// MCP (Model Context Protocol) types
+// =============================================================================
+
+export type MCPServerType = "stdio" | "sse"
+
+export interface MCPServerConfig {
+  id: string // Unique identifier for this MCP server
+  name: string // Display name
+  type: MCPServerType // Transport type
+  command?: string // Command to run (for stdio)
+  args?: string[] // Command arguments (for stdio)
+  url?: string // Server URL (for SSE)
+  env?: Record<string, string> // Environment variables
+  enabled: boolean // Whether this server is enabled
+  description?: string // Optional description
+  icon?: string // Optional icon URL or emoji
+  category?: string // Category for organization (e.g., "filesystem", "database", "api")
+}
+
+export interface MCPTool {
+  name: string // Tool name
+  description: string // Tool description
+  inputSchema: Record<string, unknown> // JSON schema for input
+  serverId: string // Which MCP server provides this tool
+}
+
+export type MCPClientStatus = "disconnected" | "connecting" | "connected" | "error"
+
+export interface MCPClientState {
+  serverId: string
+  status: MCPClientStatus
+  tools: MCPTool[]
+  error?: string
+  connectedAt?: Date
+  lastHeartbeat?: Date
+}
+
+export interface MCPConfig {
+  servers: MCPServerConfig[] // List of configured MCP servers
+  autoConnect: boolean // Whether to auto-connect on startup
+  timeout: number // Connection timeout in seconds
+}

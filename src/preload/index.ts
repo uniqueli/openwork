@@ -7,8 +7,10 @@ import type {
   HITLDecision,
   CustomApiConfig,
   Skill,
-  SkillsConfig
+  SkillsConfig,
+  MCPClientState
 } from "../main/types"
+import type { MCPServerConfigStorage } from "../main/storage"
 
 // Helper function for IPC request/response pattern
 function ipcRequest<T>(channel: string, ...args: unknown[]): Promise<T> {
@@ -392,6 +394,174 @@ const api = {
       error?: string
     }> => {
       return ipcRequest("skills:getUsage", { skillId })
+    }
+  },
+  mcp: {
+    list: (params?: {
+      enabledOnly?: boolean
+    }): Promise<{
+      success: boolean
+      servers?: MCPServerConfigStorage[]
+      error?: string
+    }> => {
+      return ipcRequest("mcp:list", params)
+    },
+    get: (
+      serverId: string
+    ): Promise<{
+      success: boolean
+      server?: MCPServerConfigStorage
+      error?: string
+    }> => {
+      return ipcRequest("mcp:get", { serverId })
+    },
+    create: (params: {
+      id: string
+      name: string
+      type: "stdio" | "sse"
+      command?: string
+      args?: string[]
+      url?: string
+      env?: Record<string, string>
+      enabled?: boolean
+      description?: string
+      icon?: string
+      category?: string
+    }): Promise<{
+      success: boolean
+      server?: MCPServerConfigStorage
+      error?: string
+    }> => {
+      return ipcRequest("mcp:create", params)
+    },
+    update: (params: {
+      serverId: string
+      name?: string
+      type?: "stdio" | "sse"
+      command?: string
+      args?: string[]
+      url?: string
+      env?: Record<string, string>
+      enabled?: boolean
+      description?: string
+      icon?: string
+      category?: string
+    }): Promise<{
+      success: boolean
+      server?: MCPServerConfigStorage
+      error?: string
+    }> => {
+      return ipcRequest("mcp:update", params)
+    },
+    delete: (
+      serverId: string
+    ): Promise<{
+      success: boolean
+      error?: string
+    }> => {
+      return ipcRequest("mcp:delete", { serverId })
+    },
+    toggle: (
+      serverId: string,
+      enabled: boolean
+    ): Promise<{
+      success: boolean
+      enabled?: boolean
+      error?: string
+    }> => {
+      return ipcRequest("mcp:toggle", { serverId, enabled })
+    },
+    connect: (
+      serverId: string
+    ): Promise<{
+      success: boolean
+      state?: MCPClientState
+      error?: string
+    }> => {
+      return ipcRequest("mcp:connect", { serverId })
+    },
+    disconnect: (
+      serverId: string
+    ): Promise<{
+      success: boolean
+      error?: string
+    }> => {
+      return ipcRequest("mcp:disconnect", { serverId })
+    },
+    getState: (
+      serverId: string
+    ): Promise<{
+      success: boolean
+      state?: MCPClientState
+      error?: string
+    }> => {
+      return ipcRequest("mcp:getState", { serverId })
+    },
+    getAllStates: (): Promise<{
+      success: boolean
+      states?: MCPClientState[]
+      error?: string
+    }> => {
+      return ipcRequest("mcp:getAllStates")
+    },
+    test: (params: {
+      type: "stdio" | "sse"
+      command?: string
+      args?: string[]
+      url?: string
+      env?: Record<string, string>
+    }): Promise<{
+      success: boolean
+      tools?: number
+      error?: string
+    }> => {
+      return ipcRequest("mcp:test", params)
+    },
+    export: (): Promise<{
+      success: boolean
+      data?: {
+        version: string
+        exportedAt: string
+        servers: Array<{
+          id: string
+          name: string
+          type: "stdio" | "sse"
+          command?: string
+          args?: string[]
+          url?: string
+          enabled: boolean
+          description?: string
+          icon?: string
+          category?: string
+        }>
+      }
+      error?: string
+    }> => {
+      return ipcRequest("mcp:export")
+    },
+    import: (data: {
+      servers: Array<{
+        id: string
+        name: string
+        type: "stdio" | "sse"
+        command?: string
+        args?: string[]
+        url?: string
+        enabled: boolean
+        description?: string
+        icon?: string
+        category?: string
+      }>
+    }): Promise<{
+      success: boolean
+      imported?: Array<{ id: string; name: string }>
+      total?: number
+      importedCount?: number
+      errorCount?: number
+      errors?: Array<{ index: number; server: string; error: string }>
+      error?: string
+    }> => {
+      return ipcRequest("mcp:import", { data })
     }
   }
 }
