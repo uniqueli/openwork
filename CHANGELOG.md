@@ -5,6 +5,55 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.1] - 2026-02-10
+
+### 🔄 Reliability Enhancements - 可靠性增强
+
+#### New Features - 新功能
+- **Model Retry Middleware**: 模型调用重试中间件
+  - 自动重试失败的模型调用，提高agent稳定性
+  - 使用指数退避策略（1s → 2s → 4s）
+  - 最多重试3次，处理临时性网络错误和速率限制（429）
+  - 失败时返回错误信息而不是中断agent执行
+  - 特别适用于：API速率限制、网络波动、临时服务不可用
+
+- **Tool Retry Middleware**: 工具调用重试中间件
+  - 自动重试失败的工具调用（MCP工具、文件操作等）
+  - 使用指数退避策略，最多重试2次
+  - 处理外部API调用失败、文件操作临时错误
+  - 提高工具执行的可靠性和成功率
+
+#### Technical Details - 技术细节
+
+##### Modified Files
+- `src/main/agent/runtime.ts`:
+  - 添加 `modelRetryMiddleware` 和 `toolRetryMiddleware` 导入
+  - 在 agent 参数中配置 middleware 数组
+  - 配置合理的重试参数（maxRetries, backoffFactor, initialDelayMs）
+
+##### Configuration
+```typescript
+middleware: [
+  modelRetryMiddleware({
+    maxRetries: 3,
+    backoffFactor: 2.0,
+    initialDelayMs: 1000,
+    onFailure: "continue"
+  }),
+  toolRetryMiddleware({
+    maxRetries: 2,
+    backoffFactor: 2.0,
+    initialDelayMs: 1000
+  })
+]
+```
+
+#### Benefits - 优势
+- ✅ **Improved Reliability**: 提高agent在不稳定网络环境下的可靠性
+- ✅ **Automatic Recovery**: 自动从临时错误中恢复，无需用户干预
+- ✅ **Rate Limit Handling**: 智能处理API速率限制，自动重试
+- ✅ **Better User Experience**: 减少因临时错误导致的失败，提升用户体验
+
 ## [0.4.0] - 2026-02-10
 
 ### 🚀 MCP Integration - Model Context Protocol 集成

@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { createDeepAgent } from "deepagents"
+import { modelRetryMiddleware, toolRetryMiddleware } from "langchain"
 import { getDefaultModel } from "../ipc/models"
 import {
   getApiKey,
@@ -297,7 +298,21 @@ export async function createAgentRuntime(options: CreateAgentRuntimeOptions) {
     backend,
     systemPrompt,
     // Require human approval for all shell commands
-    interruptOn: { execute: true }
+    interruptOn: { execute: true },
+    // Add retry middleware for better reliability
+    middleware: [
+      modelRetryMiddleware({
+        maxRetries: 3,
+        backoffFactor: 2.0,
+        initialDelayMs: 1000,
+        onFailure: "continue" // Return error message instead of throwing
+      }),
+      toolRetryMiddleware({
+        maxRetries: 2,
+        backoffFactor: 2.0,
+        initialDelayMs: 1000
+      })
+    ]
   }
 
   // Add skills if enabled
