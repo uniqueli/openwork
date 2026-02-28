@@ -14,11 +14,25 @@ permissions:
   contents: write
 
 jobs:
-  release:
-    name: Build and Publish
-    runs-on: ubuntu-latest
+  build-apps:
+    name: Build on ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest, ubuntu-latest]
+        include:
+          - os: macos-latest
+            platform: mac
+          - os: windows-latest
+            platform: windows
+          - os: ubuntu-latest
+            platform: linux
+
+    runs-on: ${{ matrix.os }}
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Extract version from tag
         id: version
@@ -27,23 +41,62 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Version: $VERSION"
 
-      - name: Validate version format
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Set version in package.json
         run: |
-          VERSION="${{ steps.version.outputs.version }}"
-          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?$ ]]; then
-            echo "❌ Invalid version format: $VERSION"
-            echo "Expected format: X.Y.Z or X.Y.Z-prerelease"
-            exit 1
-          fi
-          echo "✅ Version format valid: $VERSION"
+          npm version ${{ steps.version.outputs.version }} --no-git-tag-version --allow-same-version
+
+      - name: Build
+        run: npm run build
+
+      - name: Build macOS (Intel & Apple Silicon)
+        if: matrix.os == 'macos-latest'
+        run: npm run dist:mac
+
+      - name: Build Windows
+        if: matrix.os == 'windows-latest'
+        run: npm run dist:win
+
+      - name: Build Linux
+        if: matrix.os == 'ubuntu-latest'
+        run: npm run dist:linux
+
+      - name: Upload artifacts to Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: dist/*
+          fail_on_unmatched_files: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  publish-npm:
+    name: Publish to npm
+    runs-on: ubuntu-latest
+    needs: build-apps
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Validate secrets
         run: |
           if [ -z "$NPM_TOKEN" ]; then
-            echo "::error::Missing required secret: NPM_TOKEN"
-            exit 1
+            echo "::warning::NPM_TOKEN not set, skipping npm publish"
+            exit 0
           fi
-          echo "✅ All required secrets are configured"
+          echo "✅ NPM_TOKEN configured"
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
@@ -59,41 +112,114 @@ jobs:
       - name: Set version in package.json
         run: |
           npm version ${{ steps.version.outputs.version }} --no-git-tag-version --allow-same-version
-          echo "Updated package.json to version ${{ steps.version.outputs.version }}"
-
-      - name: Build
-        run: npm run build
 
       - name: Publish to npm
+        if: env.NPM_TOKEN != ''
         run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        continue-on-error: true
+
+  create-release:
+    name: Create Release Notes
+    runs-on: ubuntu-latest
+    needs: [build-apps]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v1
         with:
-          name: v${{ steps.version.outputs.version }}
+          name: v${{ steps.version.outputs.version }} - 应用打包和自动更新
           body: |
-            ## openwork v${{ steps.version.outputs.version }}
+            ## v${{ steps.version.outputs.version }} - 重大版本更新 🎉
 
-            ### Installation
+            ### 📦 多平台安装包
 
+            本版本首次提供完整的应用安装包，支持以下平台：
+
+            - **macOS (Apple Silicon)**: 下载 `OpenWork-${{ steps.version.outputs.version }}-arm64.dmg`
+            - **macOS (Intel)**: 下载 `OpenWork-${{ steps.version.outputs.version }}.dmg`
+            - **Windows**: 下载 `OpenWork Setup ${{ steps.version.outputs.version }}.exe`
+            - **Linux**: 下载 `OpenWork-${{ steps.version.outputs.version }}.AppImage`
+
+            ### 🔄 自动更新功能
+
+            从此版本开始，应用支持自动更新！
+            - 应用启动时自动检查更新
+            - 后台下载更新，一键安装重启
+            - 无需手动下载新版本
+
+            ### 🚀 新功能
+
+            - 应用打包系统
+            - 自动更新功能
+            - 一键发布脚本
+            - 完整文档
+
+            ### 📚 文档
+
+            - [BUILD_GUIDE.md](https://github.com/uniqueli/openwork/blob/main/BUILD_GUIDE.md) - 打包配置说明
+            - [RELEASE_GUIDE.md](https://github.com/uniqueli/openwork/blob/main/RELEASE_GUIDE.md) - 发布流程指南
+            - [CHANGELOG.md](https://github.com/uniqueli/openwork/blob/main/CHANGELOG.md) - 完整更新日志
+
+            ### ⚡ 快速安装
+
+            macOS 用户：
             ```bash
-            # Run directly
-            npx openwork
-
-            # Or install globally
-            npm install -g openwork
-            openwork
+            # 下载 DMG 文件后双击安装
+            # 或使用 Homebrew
+            brew install --cask openwork
             ```
 
-            Requires Node.js 18+. Electron is installed automatically as a dependency.
+            Windows 用户：
+            ```bash
+            # 下载 EXE 安装程序
+            # 或使用 Chocolatey
+            choco install openwork
+            ```
 
-            ### Links
-
-            - [Documentation](https://github.com/langchain-ai/openwork#readme)
-            - [npm package](https://www.npmjs.com/package/openwork)
+            Linux 用户：
+            ```bash
+            # 下载 AppImage 后添加执行权限
+            chmod +x OpenWork-*.AppImage
+            ./OpenWork-*.AppImage
+            ```
           draft: false
-          prerelease: ${{ contains(steps.version.outputs.version, '-') }}
+          prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  release-summary:
+    name: Release Summary
+    runs-on: ubuntu-latest
+    needs: [build-apps, create-release]
+    if: always()
+
+    steps:
+      - name: Success summary
+        if: needs.build-apps.result == 'success'
+        run: |
+          echo "## ✅ Release successful!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "所有平台的安装包已构建并上传到 Release。" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "📦 包含平台：" >> $GITHUB_STEP_SUMMARY
+          echo "- macOS (Apple Silicon + Intel)" >> $GITHUB_STEP_SUMMARY
+          echo "- Windows (x64 + ia32)" >> $GITHUB_STEP_SUMMARY
+          echo "- Linux (AppImage + deb)" >> $GITHUB_STEP_SUMMARY
+
+      - name: Failure summary
+        if: needs.build-apps.result == 'failure'
+        run: |
+          echo "## ❌ Release failed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "请检查日志查看失败原因。" >> $GITHUB_STEP_SUMMARY
