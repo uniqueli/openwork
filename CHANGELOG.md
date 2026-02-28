@@ -5,6 +5,87 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2025-02-28
+
+### 🎉 Major Release - 重大版本更新
+
+#### New Features - 新功能
+
+- 📦 **应用打包系统** - Application Packaging System
+  - 集成 electron-builder，支持多平台打包
+  - 支持 macOS (Apple Silicon + Intel)、Windows、Linux
+  - 一键生成 DMG、EXE、AppImage 等安装包
+  - 完整的打包配置和自动化脚本
+
+- 🔄 **自动更新功能** - Auto-Update System
+  - 集成 electron-updater，支持应用自动更新
+  - 应用启动时自动检查更新
+  - 后台下载更新，一键安装重启
+  - 支持 GitHub Releases 作为更新源
+
+- 🚀 **一键发布脚本** - One-Click Release Script
+  - 自动化构建、打包、发布流程
+  - 自动创建 Git Tag 和 GitHub Release
+  - 自动上传所有平台的安装包
+  - 简化版本发布流程
+
+- 📚 **完整文档** - Complete Documentation
+  - BUILD_GUIDE.md - 详细的打包配置说明
+  - RELEASE_GUIDE.md - 发布流程完整指南
+  - AUTO_UPDATE_README.md - 自动更新使用说明
+  - 提供最佳实践和故障排查指南
+
+#### Technical Details - 技术细节
+
+##### New Dependencies
+- `electron-builder@^26.8.1`: Electron 应用打包工具
+- `electron-updater@^6.8.3`: 自动更新功能
+- `electron-log@^5.4.3`: 日志记录
+
+##### New Files
+- `src/main/ipc/updater.ts`: 更新功能 IPC 处理器
+- `scripts/release.sh`: 自动发布脚本
+- `scripts/release-api.sh`: API 发布脚本
+- `build/entitlements.mac.plist`: macOS 权限配置
+- `build/README.md`: 图标资源说明
+
+##### Modified Files
+- `package.json`: 添加 build 配置和发布脚本
+- `src/main/index.ts`: 注册更新处理器
+- `src/preload/index.ts`: 暴露更新 API
+
+#### Build Configuration - 构建配置
+
+##### Supported Platforms
+- macOS: DMG, ZIP (x64, arm64)
+- Windows: NSIS installer, Portable (x64, ia32)
+- Linux: AppImage, DEB (x64, arm64)
+
+##### Output
+- 安装包位置: `dist/` 目录
+- 支持代码签名和公证（需配置）
+
+#### Usage - 使用方式
+
+##### 打包应用
+```bash
+npm run dist:mac    # macOS
+npm run dist:win    # Windows
+npm run dist:linux  # Linux
+```
+
+##### 发布新版本
+```bash
+./scripts/release.sh  # 自动化发布
+```
+
+#### Benefits - 优势
+- ✅ **专业分发**: 可生成专业安装包，方便用户安装
+- ✅ **自动更新**: 用户无需手动下载新版本
+- ✅ **跨平台**: 一套代码支持多个平台
+- ✅ **自动化**: 简化发布流程，提升开发效率
+- ✅ **用户友好**: 一键更新，提升用户体验
+
 ## [0.4.1] - 2026-02-10
 
 ### 🔄 Reliability Enhancements - 可靠性增强
