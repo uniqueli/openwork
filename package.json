@@ -203,6 +203,7 @@
     "linux": {
       "category": "Utility",
       "maintainer": "uniqueli <noreply@github.com>",
+      "icon": "build/icons",
       "target": [
         {
           "target": "AppImage",
@@ -219,7 +220,8 @@
           ]
         }
       ],
-      "icon": "build/icons"
+      "appId": "com.uniqueli.openwork",
+      "artifactName": "${productName}-${version}-${arch}.${ext}"
     },
     "publish": {
       "provider": "github",
