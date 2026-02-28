@@ -203,7 +203,7 @@ export interface GrepMatch {
 // Skills types
 // =============================================================================
 
-export type SkillCategory = "coding" | "analysis" | "creative" | "data" | "system" | "custom"
+export type SkillCategory = "coding" | "analysis" | "creative" | "data" | "system" | "custom" | "document" | "design"
 
 export interface Skill {
   id: string

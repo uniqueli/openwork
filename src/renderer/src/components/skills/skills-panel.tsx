@@ -98,7 +98,9 @@ export function SkillsPanel(_props: SkillsPanelProps) {
     creative: "bg-pink-500/10 text-pink-500",
     data: "bg-green-500/10 text-green-500",
     system: "bg-orange-500/10 text-orange-500",
-    custom: "bg-cyan-500/10 text-cyan-500"
+    custom: "bg-cyan-500/10 text-cyan-500",
+    document: "bg-yellow-500/10 text-yellow-500",
+    design: "bg-indigo-500/10 text-indigo-500"
   }
 
   return (

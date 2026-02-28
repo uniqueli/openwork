@@ -5,6 +5,7 @@ import { registerThreadHandlers } from "./ipc/threads"
 import { registerModelHandlers } from "./ipc/models"
 import { registerSkillsHandlers } from "./ipc/skills"
 import { registerMCPHandlers } from "./ipc/mcp"
+import { registerUpdaterHandlers, setupAutoUpdateCheck } from "./ipc/updater"
 import { initializeDatabase } from "./db"
 
 let mainWindow: BrowserWindow | null = null
@@ -89,6 +90,10 @@ app.whenReady().then(async () => {
   registerModelHandlers(ipcMain)
   registerSkillsHandlers(ipcMain)
   registerMCPHandlers(ipcMain)
+  registerUpdaterHandlers()
+
+  // Setup automatic update check (every 24 hours)
+  setupAutoUpdateCheck(24 * 60 * 60 * 1000)
 
   createWindow()
 

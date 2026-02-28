@@ -40,7 +40,9 @@ export const VALID_CATEGORIES = [
   "creative",
   "data",
   "system",
-  "custom"
+  "custom",
+  "document",
+  "design"
 ] as const
 
 /**

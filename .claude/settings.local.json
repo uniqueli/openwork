@@ -16,7 +16,16 @@
       "mcp__docs-langchain__SearchDocsByLangChain",
       "WebSearch",
       "Bash(pnpm dev)",
-      "Bash(npm run typecheck:*)"
+      "Bash(npm run typecheck:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run pack:*)",
+      "Bash(pnpm:*)",
+      "Bash(ELECTRON_BUILDER_CACHE=/tmp/electron-builder-cache npm run pack:*)",
+      "Bash(ESBUILD_DISABLE_CACHE=1 pnpm install:*)",
+      "Bash(chmod:*)",
+      "Bash(npm run dist:mac:*)",
+      "Bash(tee:*)",
+      "Bash(gh auth:*)"
     ]
   }
 }

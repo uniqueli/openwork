@@ -563,6 +563,63 @@ const api = {
     }> => {
       return ipcRequest("mcp:import", { data })
     }
+  },
+  updater: {
+    checkForUpdates: (): Promise<{
+      success: boolean
+      updateAvailable?: boolean
+      version?: string
+      releaseNotes?: string
+      downloadURL?: string
+      message?: string
+    }> => {
+      return ipcRenderer.invoke("check-for-updates")
+    },
+    downloadUpdate: (): Promise<{
+      success: boolean
+      message?: string
+    }> => {
+      return ipcRenderer.invoke("download-update")
+    },
+    installUpdate: (): Promise<{
+      success: boolean
+      message?: string
+    }> => {
+      return ipcRenderer.invoke("install-update")
+    },
+    getAppVersion: (): Promise<{
+      version: string
+      isDev: boolean
+    }> => {
+      return ipcRenderer.invoke("get-app-version")
+    },
+    onUpdateAvailable: (callback: (info: { version: string; releaseNotes?: string }) => void): (() => void) => {
+      const handler = (_: unknown, data: { version: string; releaseNotes?: string }): void => {
+        callback(data)
+      }
+      ipcRenderer.on("update-available", handler)
+      return () => {
+        ipcRenderer.removeListener("update-available", handler)
+      }
+    },
+    onUpdateDownloaded: (callback: (info: unknown) => void): (() => void) => {
+      const handler = (_: unknown, data: unknown): void => {
+        callback(data)
+      }
+      ipcRenderer.on("update-downloaded", handler)
+      return () => {
+        ipcRenderer.removeListener("update-downloaded", handler)
+      }
+    },
+    onDownloadProgress: (callback: (progress: { percent: number; speed?: number }) => void): (() => void) => {
+      const handler = (_: unknown, data: { percent: number; speed?: number }): void => {
+        callback(data)
+      }
+      ipcRenderer.on("update-download-progress", handler)
+      return () => {
+        ipcRenderer.removeListener("update-download-progress", handler)
+      }
+    }
   }
 }
 

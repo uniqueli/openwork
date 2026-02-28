@@ -369,6 +369,35 @@ interface CustomAPI {
       error?: string
     }>
   }
+  updater: {
+    checkForUpdates: () => Promise<{
+      success: boolean
+      updateAvailable?: boolean
+      version?: string
+      releaseNotes?: string
+      downloadURL?: string
+      message?: string
+    }>
+    downloadUpdate: () => Promise<{
+      success: boolean
+      message?: string
+    }>
+    installUpdate: () => Promise<{
+      success: boolean
+      message?: string
+    }>
+    getAppVersion: () => Promise<{
+      version: string
+      isDev: boolean
+    }>
+    onUpdateAvailable: (
+      callback: (info: { version: string; releaseNotes?: string }) => void
+    ) => () => void
+    onUpdateDownloaded: (callback: (info: any) => void) => () => void
+    onDownloadProgress: (
+      callback: (progress: { percent: number; speed?: number }) => void
+    ) => () => void
+  }
 }
 
 declare global {
