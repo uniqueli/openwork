@@ -134,10 +134,9 @@
     },
     "mac": {
       "category": "public.app-category.productivity",
-      "hardenedRuntime": true,
+      "hardenedRuntime": false,
       "gatekeeperAssess": false,
-      "entitlements": "build/entitlements.mac.plist",
-      "entitlementsInherit": "build/entitlements.mac.plist",
+      "sign": null,
       "target": [
         {
           "target": "dmg",
